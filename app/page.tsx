@@ -6,6 +6,106 @@ import { Home, Briefcase, FileText, Trash2, Users, Building2, Copy, ChevronRight
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 
+const PROBATE_DEADLINES = [
+  {
+    group: "Triggered by Date of Death",
+    items: [
+      {
+        title: "DHCS (Medi-Cal) Notification",
+        trigger: "Date of Death",
+        window: "90 days",
+        authority: "Cal. Prob. Code §215",
+        description: "Notify DHCS of death. Failure may cause state claim complications or executor liability."
+      },
+      {
+        title: "BOE-502-D (Change of Ownership)",
+        trigger: "Date of Death",
+        window: "150 days",
+        authority: "Revenue & Taxation Code",
+        description: "File Change of Ownership statement to avoid property tax reassessment penalties."
+      },
+      {
+        title: "SEA Waiting Period",
+        trigger: "Date of Death",
+        window: "40 days minimum",
+        authority: "Cal. Prob. Code §13100",
+        description: "Minimum 40-day waiting period before filing a Small Estate Affidavit. Affidavit will be rejected if filed early."
+      },
+    ]
+  },
+  {
+    group: "Triggered by Hearing Date",
+    items: [
+      {
+        title: "Serve Notice of Petition to Administer Estate (DE-121)",
+        trigger: "Hearing Date",
+        window: "15+ days before hearing",
+        authority: "",
+        description: "Must be served on all heirs and beneficiaries at least 15 days before the hearing date."
+      },
+      {
+        title: "Publish Notice in Newspaper",
+        trigger: "Hearing Date",
+        window: "15+ days before hearing",
+        authority: "",
+        description: "Publication must run in a newspaper of general circulation in the county. Place the order earlier than the raw 15-day deadline to allow full publication period."
+      },
+      {
+        title: "File Probate Notes / Examiner Review",
+        trigger: "Hearing Date",
+        window: "4 court days before hearing",
+        authority: "",
+        description: "Filing after this window risks a continuance. Deadline may vary by county — verify with county-specific filing logistics."
+      },
+    ]
+  },
+  {
+    group: "Triggered by Letters Issuance (DE-150)",
+    items: [
+      {
+        title: "Notify Franchise Tax Board (FTB)",
+        trigger: "Letters Issuance",
+        window: "90 days",
+        authority: "Cal. Prob. Code §9202",
+        description: "Send letter + certified Letters + death certificate to FTB Estate and Trust Section."
+      },
+      {
+        title: "Notify Known Creditors",
+        trigger: "Letters Issuance",
+        window: "30 days",
+        authority: "Cal. Prob. Code §9050",
+        description: "First-class mail to all known creditors. Failure to notify known creditors can create executor liability."
+      },
+      {
+        title: "File Inventory and Appraisal (DE-160)",
+        trigger: "Letters Issuance",
+        window: "120 days",
+        authority: "Cal. Prob. Code §8800",
+        description: "Probate referee must be appointed first. Filing triggers the referee's appraisal work."
+      },
+      {
+        title: "Creditor Claim Period Closes",
+        trigger: "Letters Issuance",
+        window: "4 months",
+        authority: "Cal. Prob. Code §9100",
+        description: "4 calendar months (not 120 days) from Letters issuance. No petition for final distribution can be filed until this closes."
+      },
+    ]
+  },
+  {
+    group: "Triggered by Each Creditor Claim Filed",
+    items: [
+      {
+        title: "Allow or Reject Creditor Claim",
+        trigger: "Per Creditor Claim Filed",
+        window: "30 days",
+        authority: "Cal. Prob. Code §9256",
+        description: "Fires once per claim. Failure to act within 30 days can constitute deemed allowance."
+      },
+    ]
+  },
+]
+
 export default function EstateManagementPage() {
   const [activeNav, setActiveNav] = useState("home")
   const [displayTestEstates, setDisplayTestEstates] = useState(false)
@@ -93,9 +193,15 @@ export default function EstateManagementPage() {
   const [newDeadlineDueDate, setNewDeadlineDueDate] = useState("")
   const [newDeadlineAssignedTo, setNewDeadlineAssignedTo] = useState("")
   const [newDeadlineDescription, setNewDeadlineDescription] = useState("")
+  const [newDeadlineTrigger, setNewDeadlineTrigger] = useState("")
+  const [newDeadlineWindow, setNewDeadlineWindow] = useState("")
+  const [newDeadlineAuthority, setNewDeadlineAuthority] = useState("")
   const [deadlines, setDeadlines] = useState<Array<{
     id: number
     title: string
+    trigger: string
+    window: string
+    authority: string
     dueDate: string
     assignedTo: string
     description: string
@@ -104,19 +210,25 @@ export default function EstateManagementPage() {
   }>>([
     {
       id: 1,
-      title: "File Probate Petition",
+      title: "Notify Franchise Tax Board (FTB)",
+      trigger: "Letters Issuance",
+      window: "90 days",
+      authority: "Cal. Prob. Code §9202",
       dueDate: "2025-04-01",
       assignedTo: "Clayton Noyes",
-      description: "Submit probate petition to county court.",
+      description: "Send letter + certified Letters + death certificate to FTB Estate and Trust Section.",
       completed: false,
       completedAt: undefined
     },
     {
       id: 2,
-      title: "Creditor Claims Deadline",
+      title: "Creditor Claim Period Closes",
+      trigger: "Letters Issuance",
+      window: "4 months",
+      authority: "Cal. Prob. Code §9100",
       dueDate: "2025-06-15",
       assignedTo: "Jolene Smith",
-      description: "Final date for creditors to file claims against the estate.",
+      description: "4 calendar months (not 120 days) from Letters issuance. No petition for final distribution can be filed until this closes.",
       completed: false,
       completedAt: undefined
     }
@@ -523,12 +635,16 @@ export default function EstateManagementPage() {
       alert("Please fill in at least the title and due date")
       return
     }
+    const selected = PROBATE_DEADLINES.flatMap(g => g.items).find(d => d.title === title)
     setDeadlines([...deadlines, {
       id: deadlines.length + 1,
       title,
+      trigger: selected?.trigger ?? newDeadlineTrigger,
+      window: selected?.window ?? newDeadlineWindow,
+      authority: selected?.authority ?? newDeadlineAuthority,
       dueDate: newDeadlineDueDate,
       assignedTo: newDeadlineAssignedTo || "Unassigned",
-      description: newDeadlineDescription || "",
+      description: newDeadlineDescription || (selected?.description ?? ""),
       completed: false,
       completedAt: undefined
     }])
@@ -537,6 +653,9 @@ export default function EstateManagementPage() {
     setNewDeadlineDueDate("")
     setNewDeadlineAssignedTo("")
     setNewDeadlineDescription("")
+    setNewDeadlineTrigger("")
+    setNewDeadlineWindow("")
+    setNewDeadlineAuthority("")
     setShowAddDeadlineModal(false)
   }
 
@@ -1603,7 +1722,7 @@ export default function EstateManagementPage() {
                                   />
                                 </div>
                               </div>
-                              <div className="flex items-center gap-4 text-sm text-[#6b675f] mb-2">
+                              <div className="flex items-center gap-4 text-sm text-[#6b675f] mb-2 flex-wrap">
                                 <div className="flex items-center gap-1.5">
                                   <CalendarDays className="w-4 h-4" />
                                   <span>{formattedDate}</span>
@@ -1612,6 +1731,21 @@ export default function EstateManagementPage() {
                                   <User className="w-4 h-4" />
                                   <span>{deadline.assignedTo}</span>
                                 </div>
+                                {deadline.trigger && (
+                                  <span className="inline-flex items-center px-2 py-0.5 rounded text-[11px] font-medium bg-[#ebe9e6] text-[#6b675f]">
+                                    Trigger: {deadline.trigger}
+                                  </span>
+                                )}
+                                {deadline.window && (
+                                  <span className="inline-flex items-center px-2 py-0.5 rounded text-[11px] font-medium bg-[#ebe9e6] text-[#6b675f]">
+                                    {deadline.window}
+                                  </span>
+                                )}
+                                {deadline.authority && (
+                                  <span className="inline-flex items-center px-2 py-0.5 rounded text-[11px] font-medium bg-[#ebe9e6] text-[#6b675f]">
+                                    {deadline.authority}
+                                  </span>
+                                )}
                               </div>
                               {deadline.description && (
                                 <p className="text-sm text-[#6b675f]">{deadline.description}</p>
@@ -1751,13 +1885,15 @@ export default function EstateManagementPage() {
                         </Button>
                       </div>
 
-                      <div className="bg-white rounded-lg border border-[#e5e5e5] overflow-hidden">
+                      <div className="bg-white rounded-lg border border-[#e5e5e5] overflow-x-auto">
                         <table className="w-full">
                           <thead className="bg-[#ebe9e6]">
                             <tr>
                               <th className="text-left px-4 py-3 text-[#3d3d3d] font-medium text-[13px]">Title</th>
+                              <th className="text-left px-4 py-3 text-[#3d3d3d] font-medium text-[13px]">Trigger</th>
+                              <th className="text-left px-4 py-3 text-[#3d3d3d] font-medium text-[13px]">Window</th>
                               <th className="text-left px-4 py-3 text-[#3d3d3d] font-medium text-[13px]">Due Date</th>
-                              <th className="text-left px-4 py-3 text-[#3d3d3d] font-medium text-[13px]">Days Remaining</th>
+                              <th className="text-left px-4 py-3 text-[#3d3d3d] font-medium text-[13px]">Status</th>
                               <th className="text-left px-4 py-3 text-[#3d3d3d] font-medium text-[13px]">Assigned To</th>
                               <th className="text-left px-4 py-3 text-[#3d3d3d] font-medium text-[13px]">Done</th>
                             </tr>
@@ -1765,7 +1901,7 @@ export default function EstateManagementPage() {
                           <tbody>
                             {deadlines.length === 0 ? (
                               <tr>
-                                <td colSpan={5} className="px-4 py-8 text-center text-[#6b675f] text-sm">
+                                <td colSpan={7} className="px-4 py-8 text-center text-[#6b675f] text-sm">
                                   No deadlines yet. Click "Add Deadline" to create one.
                                 </td>
                               </tr>
@@ -1776,8 +1912,10 @@ export default function EstateManagementPage() {
                                 try { formattedDate = format(new Date(deadline.dueDate), "MMM d, yyyy") } catch {}
                                 return (
                                   <tr key={deadline.id} className={`border-t border-[#f0f0f0] hover:bg-[#fafafa] ${deadline.completed ? "opacity-50" : ""}`}>
-                                    <td className={`px-4 py-3 text-[13px] font-medium text-[#3d3d3d] ${deadline.completed ? "line-through" : ""}`}>{deadline.title}</td>
-                                    <td className="px-4 py-3 text-[#3d3d3d] text-[13px]">{formattedDate}</td>
+                                    <td className={`px-4 py-3 text-[13px] font-medium text-[#3d3d3d] max-w-[200px] ${deadline.completed ? "line-through" : ""}`}>{deadline.title}</td>
+                                    <td className="px-4 py-3 text-[#6b675f] text-[13px] whitespace-nowrap">{deadline.trigger || "—"}</td>
+                                    <td className="px-4 py-3 text-[#6b675f] text-[13px] whitespace-nowrap">{deadline.window || "—"}</td>
+                                    <td className="px-4 py-3 text-[#3d3d3d] text-[13px] whitespace-nowrap">{formattedDate}</td>
                                     <td className="px-4 py-3">
                                       <span className={`inline-flex items-center px-2 py-0.5 rounded text-[11px] font-medium ${urgency.color}`}>
                                         {urgency.label}
@@ -2028,24 +2166,36 @@ export default function EstateManagementPage() {
                 {/* Title Field */}
                 <div>
                   <label className="block text-sm font-medium text-[#3d3d3d] mb-1.5">
-                    Title <span className="text-red-600">*</span>
+                    Deadline Type <span className="text-red-600">*</span>
                   </label>
                   <select
                     value={newDeadlineTitle}
-                    onChange={(e) => setNewDeadlineTitle(e.target.value)}
+                    onChange={(e) => {
+                      const val = e.target.value
+                      setNewDeadlineTitle(val)
+                      const match = PROBATE_DEADLINES.flatMap(g => g.items).find(d => d.title === val)
+                      if (match) {
+                        setNewDeadlineDescription(match.description)
+                        setNewDeadlineTrigger(match.trigger)
+                        setNewDeadlineWindow(match.window)
+                        setNewDeadlineAuthority(match.authority)
+                      } else {
+                        setNewDeadlineTrigger("")
+                        setNewDeadlineWindow("")
+                        setNewDeadlineAuthority("")
+                        if (val !== "Custom...") setNewDeadlineDescription("")
+                      }
+                    }}
                     className="w-full h-9 px-3 py-1.5 text-sm bg-white border border-[#d0d0d0] rounded-md text-[#3d3d3d] focus:outline-none focus:ring-2 focus:ring-[#3d3d3d] focus:border-transparent"
                   >
                     <option value="">Select a deadline type...</option>
-                    <option value="File Probate Petition">File Probate Petition</option>
-                    <option value="Publish Notice to Creditors">Publish Notice to Creditors</option>
-                    <option value="Creditor Claims Deadline">Creditor Claims Deadline</option>
-                    <option value="File Inventory of Assets">File Inventory of Assets</option>
-                    <option value="Court Hearing">Court Hearing</option>
-                    <option value="Submit Estate Tax Return">Submit Estate Tax Return</option>
-                    <option value="Submit Final Income Tax Return">Submit Final Income Tax Return</option>
-                    <option value="Distribute Assets to Beneficiaries">Distribute Assets to Beneficiaries</option>
-                    <option value="File Accounting Report">File Accounting Report</option>
-                    <option value="Estate Bank Account Closure">Estate Bank Account Closure</option>
+                    {PROBATE_DEADLINES.map((group) => (
+                      <optgroup key={group.group} label={group.group}>
+                        {group.items.map((item) => (
+                          <option key={item.title} value={item.title}>{item.title}</option>
+                        ))}
+                      </optgroup>
+                    ))}
                     <option value="Custom...">Custom...</option>
                   </select>
                   {newDeadlineTitle === "Custom..." && (
@@ -2058,6 +2208,28 @@ export default function EstateManagementPage() {
                     />
                   )}
                 </div>
+
+                {/* Auto-filled metadata */}
+                {newDeadlineTrigger && (
+                  <div className="rounded-md bg-[#f8f7f5] border border-[#e5e5e5] px-4 py-3 space-y-1.5">
+                    <div className="flex items-center gap-6 flex-wrap">
+                      <div>
+                        <span className="text-[11px] uppercase tracking-wider text-[#9b9b9b] font-semibold">Trigger</span>
+                        <p className="text-[13px] text-[#3d3d3d] font-medium mt-0.5">{newDeadlineTrigger}</p>
+                      </div>
+                      <div>
+                        <span className="text-[11px] uppercase tracking-wider text-[#9b9b9b] font-semibold">Window</span>
+                        <p className="text-[13px] text-[#3d3d3d] font-medium mt-0.5">{newDeadlineWindow}</p>
+                      </div>
+                      {newDeadlineAuthority && (
+                        <div>
+                          <span className="text-[11px] uppercase tracking-wider text-[#9b9b9b] font-semibold">Authority</span>
+                          <p className="text-[13px] text-[#3d3d3d] font-medium mt-0.5">{newDeadlineAuthority}</p>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                )}
 
                 {/* Due Date Field */}
                 <div>
@@ -2089,7 +2261,7 @@ export default function EstateManagementPage() {
                 {/* Description Field */}
                 <div>
                   <label className="block text-sm font-medium text-[#3d3d3d] mb-1.5">
-                    Description
+                    Notes
                   </label>
                   <textarea
                     value={newDeadlineDescription}
@@ -2111,6 +2283,9 @@ export default function EstateManagementPage() {
                     setNewDeadlineDueDate("")
                     setNewDeadlineAssignedTo("")
                     setNewDeadlineDescription("")
+                    setNewDeadlineTrigger("")
+                    setNewDeadlineWindow("")
+                    setNewDeadlineAuthority("")
                   }}
                   className="bg-white border border-[#d0d0d0] text-[#3d3d3d] hover:bg-[#f8f7f5] text-sm h-9"
                 >
