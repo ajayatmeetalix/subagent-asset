@@ -188,8 +188,13 @@ export default function EstateManagementPage() {
 
   // Deadlines state
   const [showAddDeadlineModal, setShowAddDeadlineModal] = useState(false)
+  // Two-step modal state
+  const [deadlineModalStep, setDeadlineModalStep] = useState<1 | 2>(1)
+  const [deadlineModalTrigger, setDeadlineModalTrigger] = useState<string | null>(null)
+  // Letters path: checklist of selected items (all pre-checked)
+  const [deadlineModalChecked, setDeadlineModalChecked] = useState<string[]>([])
+  // Custom path state
   const [newDeadlineTitle, setNewDeadlineTitle] = useState("")
-  const [newDeadlineTitleCustom, setNewDeadlineTitleCustom] = useState("")
   const [newDeadlineDueDate, setNewDeadlineDueDate] = useState("")
   const [newDeadlineAssignedTo, setNewDeadlineAssignedTo] = useState("")
   const [newDeadlineDescription, setNewDeadlineDescription] = useState("")
@@ -629,34 +634,104 @@ export default function EstateManagementPage() {
     return { label: `${diffDays}d left`, color: "bg-[#ebe9e6] text-[#6b675f]" }
   }
 
-  const handleAddDeadline = () => {
-    const title = newDeadlineTitle === "Custom..." ? newDeadlineTitleCustom : newDeadlineTitle
-    if (!title || !newDeadlineDueDate) {
-      alert("Please fill in at least the title and due date")
-      return
-    }
-    const selected = PROBATE_DEADLINES.flatMap(g => g.items).find(d => d.title === title)
-    setDeadlines([...deadlines, {
-      id: deadlines.length + 1,
-      title,
-      trigger: selected?.trigger ?? newDeadlineTrigger,
-      window: selected?.window ?? newDeadlineWindow,
-      authority: selected?.authority ?? newDeadlineAuthority,
-      dueDate: newDeadlineDueDate,
-      assignedTo: newDeadlineAssignedTo || "Unassigned",
-      description: newDeadlineDescription || (selected?.description ?? ""),
-      completed: false,
-      completedAt: undefined
-    }])
+  const resetDeadlineModal = () => {
+    setShowAddDeadlineModal(false)
+    setDeadlineModalStep(1)
+    setDeadlineModalTrigger(null)
+    setDeadlineModalChecked([])
     setNewDeadlineTitle("")
-    setNewDeadlineTitleCustom("")
     setNewDeadlineDueDate("")
     setNewDeadlineAssignedTo("")
     setNewDeadlineDescription("")
     setNewDeadlineTrigger("")
     setNewDeadlineWindow("")
     setNewDeadlineAuthority("")
-    setShowAddDeadlineModal(false)
+  }
+
+  // Calculate due date from a milestone date string (e.g. "Mar 1, 2025") and a window string
+  const calcDueDate = (milestoneDate: string, window: string): string => {
+    try {
+      let base: Date
+      // Try parsing "MMM d, yyyy" first, then ISO
+      try { base = new Date(milestoneDate) } catch { return "" }
+      if (isNaN(base.getTime())) return ""
+      const lower = window.toLowerCase()
+      const numMatch = lower.match(/(\d+)/)
+      const num = numMatch ? parseInt(numMatch[1]) : 0
+      if (lower.includes("month")) {
+        const d = new Date(base)
+        d.setMonth(d.getMonth() + num)
+        return format(d, "yyyy-MM-dd")
+      }
+      if (lower.includes("day")) {
+        const d = new Date(base)
+        d.setDate(d.getDate() + num)
+        return format(d, "yyyy-MM-dd")
+      }
+      return ""
+    } catch { return "" }
+  }
+
+  // Look up a milestone date from the milestones list by name keyword
+  const getMilestoneDate = (keyword: string): string => {
+    const m = milestones.find(m => m.name.toLowerCase().includes(keyword.toLowerCase()))
+    return m?.date ?? ""
+  }
+
+  const handleAddDeadline = () => {
+    const group = PROBATE_DEADLINES.find(g => g.group.toLowerCase().includes(
+      deadlineModalTrigger === "letters" ? "letters" :
+      deadlineModalTrigger === "death" ? "death" :
+      deadlineModalTrigger === "hearing" ? "hearing" :
+      deadlineModalTrigger === "creditor" ? "creditor claim" : ""
+    ))
+
+    if (deadlineModalTrigger === "custom") {
+      if (!newDeadlineTitle || !newDeadlineDueDate) {
+        alert("Please fill in at least the title and due date.")
+        return
+      }
+      setDeadlines(prev => [...prev, {
+        id: prev.length + 1,
+        title: newDeadlineTitle,
+        trigger: newDeadlineTrigger || "Custom",
+        window: newDeadlineWindow || "",
+        authority: newDeadlineAuthority || "",
+        dueDate: newDeadlineDueDate,
+        assignedTo: newDeadlineAssignedTo || "Unassigned",
+        description: newDeadlineDescription || "",
+        completed: false,
+        completedAt: undefined
+      }])
+      resetDeadlineModal()
+      return
+    }
+
+    if (!group) return
+    const milestoneDate = getMilestoneDate(
+      deadlineModalTrigger === "letters" ? "letters" :
+      deadlineModalTrigger === "death" ? "closed won" :
+      deadlineModalTrigger === "hearing" ? "hearing" : "letters"
+    )
+
+    const toAdd = group.items
+      .filter(item => deadlineModalChecked.includes(item.title))
+      .map((item, i) => ({
+        id: deadlines.length + 1 + i,
+        title: item.title,
+        trigger: item.trigger,
+        window: item.window,
+        authority: item.authority,
+        dueDate: milestoneDate ? calcDueDate(milestoneDate, item.window) : "",
+        assignedTo: "Unassigned",
+        description: item.description,
+        completed: false,
+        completedAt: undefined as string | undefined
+      }))
+
+    if (toAdd.length === 0) return
+    setDeadlines(prev => [...prev, ...toAdd])
+    resetDeadlineModal()
   }
 
   const handleToggleDeadlineComplete = (id: number) => {
@@ -1600,7 +1675,7 @@ export default function EstateManagementPage() {
                       <span className="hidden sm:inline">Add Milestone</span>
                     </Button>
                     <Button
-                      onClick={() => setShowAddDeadlineModal(true)}
+                      onClick={() => { setShowAddDeadlineModal(true); setDeadlineModalStep(1); setDeadlineModalTrigger(null); setDeadlineModalChecked([]) }}
                       className="bg-white border border-[#d0d0d0] text-[#3d3d3d] hover:bg-[#f8f7f5] text-sm h-9 flex-1 sm:flex-initial"
                     >
                       <Plus className="w-4 h-4 sm:mr-1.5" />
@@ -1877,7 +1952,7 @@ export default function EstateManagementPage() {
                       <div className="flex items-center justify-between mt-10 mb-6">
                         <h2 className="text-lg font-semibold text-[#3d3d3d]">Deadlines</h2>
                         <Button
-                          onClick={() => setShowAddDeadlineModal(true)}
+                          onClick={() => { setShowAddDeadlineModal(true); setDeadlineModalStep(1); setDeadlineModalTrigger(null); setDeadlineModalChecked([]) }}
                           className="bg-[#3d3d3d] text-white hover:bg-[#2d2d2d] text-sm h-9"
                         >
                           <Plus className="w-4 h-4 mr-1.5" />
@@ -2140,167 +2215,320 @@ export default function EstateManagementPage() {
         )}
 
         {/* Add Deadline Modal */}
-        {showAddDeadlineModal && (
-          <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-            <div className="bg-white rounded-lg shadow-2xl w-full max-w-lg" onClick={(e) => e.stopPropagation()}>
-              {/* Modal Header */}
-              <div className="flex items-center justify-between px-6 py-4 border-b border-[#e5e5e5]">
-                <h2 className="text-lg font-semibold text-[#3d3d3d]">Add Deadline</h2>
-                <button
-                  onClick={() => {
-                    setShowAddDeadlineModal(false)
-                    setNewDeadlineTitle("")
-                    setNewDeadlineTitleCustom("")
-                    setNewDeadlineDueDate("")
-                    setNewDeadlineAssignedTo("")
-                    setNewDeadlineDescription("")
-                  }}
-                  className="p-2 hover:bg-[#f8f7f5] rounded-full transition-colors"
-                >
-                  <X className="w-5 h-5 text-[#6b675f]" />
-                </button>
-              </div>
+        {showAddDeadlineModal && (() => {
+          // Trigger card definitions
+          const triggerCards = [
+            {
+              key: "death",
+              label: "Date of death",
+              items: ["DHCS (Medi-Cal) notification", "BOE-502-D", "SEA waiting period"],
+              milestoneKeyword: "closed won",
+            },
+            {
+              key: "hearing",
+              label: "Hearing date assigned",
+              items: ["Notice of petition (DE-121)", "Publish notice in newspaper", "File probate notes"],
+              milestoneKeyword: "hearing",
+            },
+            {
+              key: "letters",
+              label: "Letters issued (DE-150)",
+              items: ["FTB notice", "Notify known creditors", "File inventory and appraisal", "Creditor claim period closes"],
+              milestoneKeyword: "letters",
+            },
+            {
+              key: "creditor",
+              label: "Creditor claim filed",
+              items: ["Allow or reject creditor claim"],
+              milestoneKeyword: "letters",
+            },
+          ]
 
-              {/* Modal Body */}
-              <div className="px-6 py-6 space-y-4">
-                {/* Title Field */}
-                <div>
-                  <label className="block text-sm font-medium text-[#3d3d3d] mb-1.5">
-                    Deadline Type <span className="text-red-600">*</span>
-                  </label>
-                  <select
-                    value={newDeadlineTitle}
-                    onChange={(e) => {
-                      const val = e.target.value
-                      setNewDeadlineTitle(val)
-                      const match = PROBATE_DEADLINES.flatMap(g => g.items).find(d => d.title === val)
-                      if (match) {
-                        setNewDeadlineDescription(match.description)
-                        setNewDeadlineTrigger(match.trigger)
-                        setNewDeadlineWindow(match.window)
-                        setNewDeadlineAuthority(match.authority)
-                      } else {
-                        setNewDeadlineTrigger("")
-                        setNewDeadlineWindow("")
-                        setNewDeadlineAuthority("")
-                        if (val !== "Custom...") setNewDeadlineDescription("")
-                      }
-                    }}
-                    className="w-full h-9 px-3 py-1.5 text-sm bg-white border border-[#d0d0d0] rounded-md text-[#3d3d3d] focus:outline-none focus:ring-2 focus:ring-[#3d3d3d] focus:border-transparent"
-                  >
-                    <option value="">Select a deadline type...</option>
-                    {PROBATE_DEADLINES.map((group) => (
-                      <optgroup key={group.group} label={group.group}>
-                        {group.items.map((item) => (
-                          <option key={item.title} value={item.title}>{item.title}</option>
-                        ))}
-                      </optgroup>
-                    ))}
-                    <option value="Custom...">Custom...</option>
-                  </select>
-                  {newDeadlineTitle === "Custom..." && (
-                    <Input
-                      type="text"
-                      value={newDeadlineTitleCustom}
-                      onChange={(e) => setNewDeadlineTitleCustom(e.target.value)}
-                      placeholder="Enter custom deadline title..."
-                      className="w-full h-9 mt-2 text-sm bg-white border-[#d0d0d0] text-[#3d3d3d] placeholder:text-[#9b9b9b]"
-                    />
-                  )}
+          const selectedGroup = deadlineModalTrigger
+            ? PROBATE_DEADLINES.find(g => g.group.toLowerCase().includes(
+                deadlineModalTrigger === "letters" ? "letters" :
+                deadlineModalTrigger === "death" ? "death" :
+                deadlineModalTrigger === "hearing" ? "hearing" : "creditor claim"
+              ))
+            : null
+
+          const milestoneLabel =
+            deadlineModalTrigger === "letters" ? "Letters issued" :
+            deadlineModalTrigger === "death" ? "Date of death" :
+            deadlineModalTrigger === "hearing" ? "Hearing date" :
+            deadlineModalTrigger === "creditor" ? "Letters issued" : ""
+
+          const milestoneRawDate =
+            deadlineModalTrigger === "letters" ? getMilestoneDate("letters") :
+            deadlineModalTrigger === "death" ? getMilestoneDate("closed won") :
+            deadlineModalTrigger === "hearing" ? getMilestoneDate("hearing") :
+            deadlineModalTrigger === "creditor" ? getMilestoneDate("letters") : ""
+
+          // Format milestone date for display: "Mar 1, 2025"
+          let milestoneDateDisplay = milestoneRawDate
+          try {
+            if (milestoneRawDate) {
+              const d = new Date(milestoneRawDate)
+              if (!isNaN(d.getTime())) milestoneDateDisplay = format(d, "MMM d, yyyy")
+            }
+          } catch {}
+
+          // For letters path: pre-build computed rows
+          const lettersItems = selectedGroup?.items ?? []
+          const checkedCount = deadlineModalChecked.length
+
+          return (
+            <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50 p-4" onClick={resetDeadlineModal}>
+              <div
+                className="bg-white w-full max-w-[520px] border border-[#d0d0d0] rounded-sm"
+                onClick={(e) => e.stopPropagation()}
+              >
+                {/* Header */}
+                <div className="flex items-center justify-between px-5 py-3.5 border-b border-[#e5e5e5]">
+                  <div className="flex items-center gap-2">
+                    {deadlineModalStep === 2 && (
+                      <button
+                        onClick={() => { setDeadlineModalStep(1); setDeadlineModalTrigger(null); setDeadlineModalChecked([]) }}
+                        className="text-[#6b675f] hover:text-[#3d3d3d] transition-colors mr-1"
+                        aria-label="Back"
+                      >
+                        <ChevronRight className="w-4 h-4 rotate-180" />
+                      </button>
+                    )}
+                    <span className="text-[13px] font-semibold text-[#3d3d3d] tracking-tight">Add deadline</span>
+                    {deadlineModalStep === 2 && deadlineModalTrigger !== "custom" && (
+                      <span className="text-[11px] text-[#9b9b9b] font-normal ml-1">
+                        {triggerCards.find(c => c.key === deadlineModalTrigger)?.label}
+                      </span>
+                    )}
+                  </div>
+                  <button onClick={resetDeadlineModal} className="p-1 hover:bg-[#f0f0f0] rounded transition-colors" aria-label="Close">
+                    <X className="w-4 h-4 text-[#9b9b9b]" />
+                  </button>
                 </div>
 
-                {/* Auto-filled metadata */}
-                {newDeadlineTrigger && (
-                  <div className="rounded-md bg-[#f8f7f5] border border-[#e5e5e5] px-4 py-3 space-y-1.5">
-                    <div className="flex items-center gap-6 flex-wrap">
-                      <div>
-                        <span className="text-[11px] uppercase tracking-wider text-[#9b9b9b] font-semibold">Trigger</span>
-                        <p className="text-[13px] text-[#3d3d3d] font-medium mt-0.5">{newDeadlineTrigger}</p>
-                      </div>
-                      <div>
-                        <span className="text-[11px] uppercase tracking-wider text-[#9b9b9b] font-semibold">Window</span>
-                        <p className="text-[13px] text-[#3d3d3d] font-medium mt-0.5">{newDeadlineWindow}</p>
-                      </div>
-                      {newDeadlineAuthority && (
-                        <div>
-                          <span className="text-[11px] uppercase tracking-wider text-[#9b9b9b] font-semibold">Authority</span>
-                          <p className="text-[13px] text-[#3d3d3d] font-medium mt-0.5">{newDeadlineAuthority}</p>
-                        </div>
-                      )}
+                {/* Step 1 — Trigger selection */}
+                {deadlineModalStep === 1 && (
+                  <div className="px-5 py-5">
+                    <p className="text-[12px] text-[#9b9b9b] mb-4 leading-relaxed">What triggered this deadline?</p>
+                    <div className="grid grid-cols-2 gap-2">
+                      {triggerCards.map((card) => (
+                        <button
+                          key={card.key}
+                          onClick={() => {
+                            setDeadlineModalTrigger(card.key)
+                            setDeadlineModalStep(2)
+                            // Pre-check all items for this group
+                            const group = PROBATE_DEADLINES.find(g => g.group.toLowerCase().includes(
+                              card.key === "letters" ? "letters" :
+                              card.key === "death" ? "death" :
+                              card.key === "hearing" ? "hearing" : "creditor claim"
+                            ))
+                            if (group) setDeadlineModalChecked(group.items.map(i => i.title))
+                          }}
+                          className="text-left p-3.5 border border-[#e0e0e0] rounded-sm hover:border-[#3d3d3d] hover:bg-[#fafafa] transition-colors group"
+                        >
+                          <p className="text-[12px] font-semibold text-[#3d3d3d] mb-2 leading-snug group-hover:text-[#1a1a1a]">{card.label}</p>
+                          <ul className="space-y-0.5">
+                            {card.items.map((item) => (
+                              <li key={item} className="text-[11px] text-[#9b9b9b] leading-snug">{item}</li>
+                            ))}
+                          </ul>
+                        </button>
+                      ))}
+                    </div>
+                    <div className="mt-4 pt-4 border-t border-[#f0f0f0]">
+                      <button
+                        onClick={() => { setDeadlineModalTrigger("custom"); setDeadlineModalStep(2) }}
+                        className="text-[12px] text-[#6b675f] hover:text-[#3d3d3d] transition-colors flex items-center gap-1"
+                      >
+                        Custom deadline
+                        <ChevronRight className="w-3 h-3" />
+                      </button>
                     </div>
                   </div>
                 )}
 
-                {/* Due Date Field */}
-                <div>
-                  <label className="block text-sm font-medium text-[#3d3d3d] mb-1.5">
-                    Due Date <span className="text-red-600">*</span>
-                  </label>
-                  <Input
-                    type="date"
-                    value={newDeadlineDueDate}
-                    onChange={(e) => setNewDeadlineDueDate(e.target.value)}
-                    className="w-full h-9 text-sm bg-white border-[#d0d0d0] text-[#3d3d3d]"
-                  />
-                </div>
+                {/* Step 2 — Custom form */}
+                {deadlineModalStep === 2 && deadlineModalTrigger === "custom" && (
+                  <div className="px-5 py-5 space-y-4">
+                    <div>
+                      <label className="block text-[11px] font-semibold text-[#9b9b9b] uppercase tracking-wider mb-1.5">Title</label>
+                      <Input
+                        type="text"
+                        value={newDeadlineTitle}
+                        onChange={(e) => setNewDeadlineTitle(e.target.value)}
+                        placeholder="Deadline name"
+                        className="h-8 text-[13px] bg-white border-[#d0d0d0] text-[#3d3d3d] placeholder:text-[#c0c0c0] rounded-sm"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-[11px] font-semibold text-[#9b9b9b] uppercase tracking-wider mb-1.5">Due date</label>
+                      <Input
+                        type="date"
+                        value={newDeadlineDueDate}
+                        onChange={(e) => setNewDeadlineDueDate(e.target.value)}
+                        className="h-8 text-[13px] bg-white border-[#d0d0d0] text-[#3d3d3d] rounded-sm"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-[11px] font-semibold text-[#9b9b9b] uppercase tracking-wider mb-1.5">Assigned to</label>
+                      <Input
+                        type="text"
+                        value={newDeadlineAssignedTo}
+                        onChange={(e) => setNewDeadlineAssignedTo(e.target.value)}
+                        placeholder="e.g., Clayton Noyes"
+                        className="h-8 text-[13px] bg-white border-[#d0d0d0] text-[#3d3d3d] placeholder:text-[#c0c0c0] rounded-sm"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-[11px] font-semibold text-[#9b9b9b] uppercase tracking-wider mb-1.5">Notes</label>
+                      <textarea
+                        value={newDeadlineDescription}
+                        onChange={(e) => setNewDeadlineDescription(e.target.value)}
+                        placeholder="Optional notes"
+                        rows={3}
+                        className="w-full px-3 py-2 text-[13px] bg-white border border-[#d0d0d0] rounded-sm text-[#3d3d3d] placeholder:text-[#c0c0c0] focus:outline-none focus:ring-1 focus:ring-[#3d3d3d] focus:border-transparent resize-none"
+                      />
+                    </div>
+                    <div className="flex items-center justify-end gap-2 pt-1 border-t border-[#f0f0f0]">
+                      <Button onClick={resetDeadlineModal} className="h-8 px-4 bg-white border border-[#d0d0d0] text-[#3d3d3d] hover:bg-[#f8f7f5] text-[12px] rounded-sm font-medium">Cancel</Button>
+                      <Button onClick={handleAddDeadline} className="h-8 px-4 bg-[#3d3d3d] text-white hover:bg-[#2d2d2d] text-[12px] rounded-sm font-medium">Add deadline</Button>
+                    </div>
+                  </div>
+                )}
 
-                {/* Assigned To Field */}
-                <div>
-                  <label className="block text-sm font-medium text-[#3d3d3d] mb-1.5">
-                    Assigned To
-                  </label>
-                  <Input
-                    type="text"
-                    value={newDeadlineAssignedTo}
-                    onChange={(e) => setNewDeadlineAssignedTo(e.target.value)}
-                    placeholder="e.g., Clayton Noyes"
-                    className="w-full h-9 text-sm bg-white border-[#d0d0d0] text-[#3d3d3d] placeholder:text-[#9b9b9b]"
-                  />
-                </div>
+                {/* Step 2 — Letters issued: checklist path */}
+                {deadlineModalStep === 2 && deadlineModalTrigger === "letters" && (
+                  <div className="px-5 pt-4 pb-5">
+                    {/* Milestone date pill */}
+                    <div className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-[#f0f0f0] border border-[#e0e0e0] rounded-full mb-4">
+                      <span className="text-[11px] font-medium text-[#3d3d3d]">
+                        {milestoneLabel}{milestoneDateDisplay ? ` · ${milestoneDateDisplay}` : " · date not set"}
+                      </span>
+                    </div>
 
-                {/* Description Field */}
-                <div>
-                  <label className="block text-sm font-medium text-[#3d3d3d] mb-1.5">
-                    Notes
-                  </label>
-                  <textarea
-                    value={newDeadlineDescription}
-                    onChange={(e) => setNewDeadlineDescription(e.target.value)}
-                    placeholder="Enter deadline details..."
-                    rows={3}
-                    className="w-full px-3 py-2 text-sm bg-white border border-[#d0d0d0] rounded-md text-[#3d3d3d] placeholder:text-[#9b9b9b] focus:outline-none focus:ring-2 focus:ring-[#3d3d3d] focus:border-transparent resize-none"
-                  />
-                </div>
-              </div>
+                    {/* Checklist */}
+                    <div className="space-y-0 divide-y divide-[#f0f0f0] border border-[#e5e5e5] rounded-sm overflow-hidden">
+                      {lettersItems.map((item) => {
+                        const checked = deadlineModalChecked.includes(item.title)
+                        const calcDate = milestoneRawDate ? calcDueDate(milestoneRawDate, item.window) : ""
+                        let calcDateDisplay = ""
+                        try { if (calcDate) calcDateDisplay = format(new Date(calcDate + "T00:00:00"), "MMM d, yyyy") } catch {}
+                        return (
+                          <label
+                            key={item.title}
+                            className="flex items-start gap-3 px-3.5 py-3 cursor-pointer hover:bg-[#fafafa] transition-colors"
+                          >
+                            <input
+                              type="checkbox"
+                              checked={checked}
+                              onChange={() => {
+                                setDeadlineModalChecked(prev =>
+                                  checked ? prev.filter(t => t !== item.title) : [...prev, item.title]
+                                )
+                              }}
+                              className="mt-0.5 w-3.5 h-3.5 rounded-none border-[#c0c0c0] accent-[#3d3d3d] cursor-pointer flex-shrink-0"
+                            />
+                            <div className="min-w-0 flex-1">
+                              <div className="flex items-baseline justify-between gap-2">
+                                <span className={`text-[12px] font-medium text-[#3d3d3d] leading-snug ${!checked ? "line-through text-[#b0b0b0]" : ""}`}>{item.title}</span>
+                                {calcDateDisplay && checked && (
+                                  <span className="text-[11px] text-[#6b675f] whitespace-nowrap flex-shrink-0">Due {calcDateDisplay}</span>
+                                )}
+                              </div>
+                              <p className="text-[11px] text-[#9b9b9b] mt-0.5">{item.window} from letters</p>
+                            </div>
+                          </label>
+                        )
+                      })}
+                    </div>
 
-              {/* Modal Footer */}
-              <div className="flex items-center justify-end gap-3 px-6 py-4 border-t border-[#e5e5e5] bg-[#fafafa]">
-                <Button
-                  onClick={() => {
-                    setShowAddDeadlineModal(false)
-                    setNewDeadlineTitle("")
-                    setNewDeadlineTitleCustom("")
-                    setNewDeadlineDueDate("")
-                    setNewDeadlineAssignedTo("")
-                    setNewDeadlineDescription("")
-                    setNewDeadlineTrigger("")
-                    setNewDeadlineWindow("")
-                    setNewDeadlineAuthority("")
-                  }}
-                  className="bg-white border border-[#d0d0d0] text-[#3d3d3d] hover:bg-[#f8f7f5] text-sm h-9"
-                >
-                  Cancel
-                </Button>
-                <Button
-                  onClick={handleAddDeadline}
-                  className="bg-[#3d3d3d] text-white hover:bg-[#2d2d2d] text-sm h-9"
-                >
-                  Save Deadline
-                </Button>
+                    {/* Fine print */}
+                    <p className="text-[10px] text-[#b0b0b0] mt-2.5 leading-relaxed">
+                      Dates calculated from {milestoneLabel}{milestoneDateDisplay ? ` ${milestoneDateDisplay}` : ""} · Cal. Prob. Code
+                    </p>
+
+                    {/* Footer */}
+                    <div className="flex items-center justify-end gap-2 mt-4 pt-4 border-t border-[#f0f0f0]">
+                      <Button onClick={resetDeadlineModal} className="h-8 px-4 bg-white border border-[#d0d0d0] text-[#3d3d3d] hover:bg-[#f8f7f5] text-[12px] rounded-sm font-medium">Cancel</Button>
+                      <Button
+                        onClick={handleAddDeadline}
+                        disabled={checkedCount === 0}
+                        className="h-8 px-4 bg-[#3d3d3d] text-white hover:bg-[#2d2d2d] text-[12px] rounded-sm font-medium disabled:opacity-40 disabled:cursor-not-allowed"
+                      >
+                        Add {checkedCount > 0 ? checkedCount : ""} deadline{checkedCount !== 1 ? "s" : ""}
+                      </Button>
+                    </div>
+                  </div>
+                )}
+
+                {/* Step 2 — All other triggers: single deadline row */}
+                {deadlineModalStep === 2 && deadlineModalTrigger !== "custom" && deadlineModalTrigger !== "letters" && selectedGroup && (
+                  <div className="px-5 pt-4 pb-5">
+                    {/* Milestone date pill */}
+                    <div className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-[#f0f0f0] border border-[#e0e0e0] rounded-full mb-4">
+                      <span className="text-[11px] font-medium text-[#3d3d3d]">
+                        {milestoneLabel}{milestoneDateDisplay ? ` · ${milestoneDateDisplay}` : " · date not set"}
+                      </span>
+                    </div>
+
+                    {/* Deadline rows */}
+                    <div className="space-y-0 divide-y divide-[#f0f0f0] border border-[#e5e5e5] rounded-sm overflow-hidden">
+                      {selectedGroup.items.map((item) => {
+                        const checked = deadlineModalChecked.includes(item.title)
+                        const calcDate = milestoneRawDate ? calcDueDate(milestoneRawDate, item.window) : ""
+                        let calcDateDisplay = ""
+                        try { if (calcDate) calcDateDisplay = format(new Date(calcDate + "T00:00:00"), "MMM d, yyyy") } catch {}
+                        return (
+                          <label
+                            key={item.title}
+                            className="flex items-start gap-3 px-3.5 py-3 cursor-pointer hover:bg-[#fafafa] transition-colors"
+                          >
+                            <input
+                              type="checkbox"
+                              checked={checked}
+                              onChange={() => {
+                                setDeadlineModalChecked(prev =>
+                                  checked ? prev.filter(t => t !== item.title) : [...prev, item.title]
+                                )
+                              }}
+                              className="mt-0.5 w-3.5 h-3.5 rounded-none border-[#c0c0c0] accent-[#3d3d3d] cursor-pointer flex-shrink-0"
+                            />
+                            <div className="min-w-0 flex-1">
+                              <div className="flex items-baseline justify-between gap-2">
+                                <span className={`text-[12px] font-medium text-[#3d3d3d] leading-snug ${!checked ? "line-through text-[#b0b0b0]" : ""}`}>{item.title}</span>
+                                {calcDateDisplay && checked && (
+                                  <span className="text-[11px] text-[#6b675f] whitespace-nowrap flex-shrink-0">Due {calcDateDisplay}</span>
+                                )}
+                              </div>
+                              <p className="text-[11px] text-[#9b9b9b] mt-0.5">{item.window}</p>
+                            </div>
+                          </label>
+                        )
+                      })}
+                    </div>
+
+                    <p className="text-[10px] text-[#b0b0b0] mt-2.5 leading-relaxed">
+                      Dates calculated from {milestoneLabel}{milestoneDateDisplay ? ` ${milestoneDateDisplay}` : ""} · Cal. Prob. Code
+                    </p>
+
+                    <div className="flex items-center justify-end gap-2 mt-4 pt-4 border-t border-[#f0f0f0]">
+                      <Button onClick={resetDeadlineModal} className="h-8 px-4 bg-white border border-[#d0d0d0] text-[#3d3d3d] hover:bg-[#f8f7f5] text-[12px] rounded-sm font-medium">Cancel</Button>
+                      <Button
+                        onClick={handleAddDeadline}
+                        disabled={deadlineModalChecked.length === 0}
+                        className="h-8 px-4 bg-[#3d3d3d] text-white hover:bg-[#2d2d2d] text-[12px] rounded-sm font-medium disabled:opacity-40 disabled:cursor-not-allowed"
+                      >
+                        Add {deadlineModalChecked.length > 0 ? deadlineModalChecked.length : ""} deadline{deadlineModalChecked.length !== 1 ? "s" : ""}
+                      </Button>
+                    </div>
+                  </div>
+                )}
               </div>
             </div>
-          </div>
-        )}
+          )
+        })()}
       </div>
     )
   }
