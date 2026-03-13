@@ -1,6 +1,7 @@
 "use client"
 
 import { useState } from "react"
+import { format } from "date-fns"
 import { Home, Briefcase, FileText, Trash2, Users, Building2, Copy, ChevronRight, Download, Plus, Menu, RefreshCw, User, CreditCard, DollarSign, Lock, Clipboard, UserCircle, BarChart3, FileCheck, UserPlus, CircleDollarSign, MousePointer, FolderOpen, Search, Edit, Folder, Grid, Upload, FolderPlus, MoreVertical, Trash, Edit2, X, File, CheckCircle, Image, FileImage, FolderInput, Eye, CalendarDays, Clock, CheckCircle2, AlertCircle } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -82,6 +83,42 @@ export default function EstateManagementPage() {
       date: "Jul 12, 2025",
       assignedTo: "Unassigned",
       description: "Estate tax return filed with appropriate authorities."
+    }
+  ])
+
+  // Deadlines state
+  const [showAddDeadlineModal, setShowAddDeadlineModal] = useState(false)
+  const [newDeadlineTitle, setNewDeadlineTitle] = useState("")
+  const [newDeadlineTitleCustom, setNewDeadlineTitleCustom] = useState("")
+  const [newDeadlineDueDate, setNewDeadlineDueDate] = useState("")
+  const [newDeadlineAssignedTo, setNewDeadlineAssignedTo] = useState("")
+  const [newDeadlineDescription, setNewDeadlineDescription] = useState("")
+  const [deadlines, setDeadlines] = useState<Array<{
+    id: number
+    title: string
+    dueDate: string
+    assignedTo: string
+    description: string
+    completed: boolean
+    completedAt: string | undefined
+  }>>([
+    {
+      id: 1,
+      title: "File Probate Petition",
+      dueDate: "2025-04-01",
+      assignedTo: "Clayton Noyes",
+      description: "Submit probate petition to county court.",
+      completed: false,
+      completedAt: undefined
+    },
+    {
+      id: 2,
+      title: "Creditor Claims Deadline",
+      dueDate: "2025-06-15",
+      assignedTo: "Jolene Smith",
+      description: "Final date for creditors to file claims against the estate.",
+      completed: false,
+      completedAt: undefined
     }
   ])
 
@@ -464,6 +501,51 @@ export default function EstateManagementPage() {
     setNewMilestoneDescription("")
     setNewMilestoneAssignedTo("")
     setShowAddMilestoneModal(false)
+  }
+
+  // Deadline urgency helper
+  const getDeadlineUrgency = (dueDate: string, completed: boolean) => {
+    if (completed) return { label: "Completed", color: "bg-green-100 text-green-700" }
+    const today = new Date()
+    today.setHours(0, 0, 0, 0)
+    const due = new Date(dueDate)
+    const diffDays = Math.ceil((due.getTime() - today.getTime()) / (1000 * 60 * 60 * 24))
+    if (diffDays < 0)  return { label: `${Math.abs(diffDays)}d overdue`, color: "bg-red-100 text-red-700" }
+    if (diffDays <= 3) return { label: `${diffDays}d left`, color: "bg-orange-100 text-orange-700" }
+    if (diffDays <= 7) return { label: `${diffDays}d left`, color: "bg-amber-100 text-amber-700" }
+    if (diffDays <= 30) return { label: `${diffDays}d left`, color: "bg-blue-100 text-blue-700" }
+    return { label: `${diffDays}d left`, color: "bg-[#ebe9e6] text-[#6b675f]" }
+  }
+
+  const handleAddDeadline = () => {
+    const title = newDeadlineTitle === "Custom..." ? newDeadlineTitleCustom : newDeadlineTitle
+    if (!title || !newDeadlineDueDate) {
+      alert("Please fill in at least the title and due date")
+      return
+    }
+    setDeadlines([...deadlines, {
+      id: deadlines.length + 1,
+      title,
+      dueDate: newDeadlineDueDate,
+      assignedTo: newDeadlineAssignedTo || "Unassigned",
+      description: newDeadlineDescription || "",
+      completed: false,
+      completedAt: undefined
+    }])
+    setNewDeadlineTitle("")
+    setNewDeadlineTitleCustom("")
+    setNewDeadlineDueDate("")
+    setNewDeadlineAssignedTo("")
+    setNewDeadlineDescription("")
+    setShowAddDeadlineModal(false)
+  }
+
+  const handleToggleDeadlineComplete = (id: number) => {
+    setDeadlines(deadlines.map(d =>
+      d.id === id
+        ? { ...d, completed: !d.completed, completedAt: !d.completed ? new Date().toISOString() : undefined }
+        : d
+    ))
   }
 
   // Document folder structure
@@ -1391,19 +1473,19 @@ export default function EstateManagementPage() {
                 <div className="bg-white border-b border-[#d4cfca] px-4 sm:px-6 py-4">
                   <h2 className="text-base sm:text-lg font-semibold text-[#2d2d2d] mb-4">Estate Timeline</h2>
                   <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 sm:gap-3">
-                    <div className="relative flex-1 w-full">
-                      <Input
-                        type="text"
-                        placeholder="Search milestones"
-                        className="w-full h-9 text-sm bg-white border-[#d0d0d0] text-[#3d3d3d] placeholder:text-[#9b9b9b]"
-                      />
-                    </div>
-                    <Button 
+                    <Button
                       onClick={() => setShowAddMilestoneModal(true)}
                       className="bg-[#3d3d3d] text-white hover:bg-[#2d2d2d] text-sm h-9 flex-1 sm:flex-initial"
                     >
                       <Plus className="w-4 h-4 sm:mr-1.5" />
                       <span className="hidden sm:inline">Add Milestone</span>
+                    </Button>
+                    <Button
+                      onClick={() => setShowAddDeadlineModal(true)}
+                      className="bg-white border border-[#d0d0d0] text-[#3d3d3d] hover:bg-[#f8f7f5] text-sm h-9 flex-1 sm:flex-initial"
+                    >
+                      <Plus className="w-4 h-4 sm:mr-1.5" />
+                      <span className="hidden sm:inline">Add Deadline</span>
                     </Button>
                   </div>
                 </div>
@@ -1411,46 +1493,135 @@ export default function EstateManagementPage() {
                 {/* Timeline Content */}
                 <div className="flex-1 overflow-auto p-4 sm:p-6">
                   <div className="max-w-4xl mx-auto">
-                    {/* Vertical Timeline Stepper */}
-                    <div className="relative">
-                      {/* Timeline Line */}
-                      <div className="absolute left-6 top-0 bottom-0 w-0.5 bg-[#d4cfca]"></div>
 
-                      {/* Map through milestones */}
-                      {milestones.map((milestone, index) => (
+                    {/* Urgent Deadlines Callout — only shown when deadlines need attention */}
+                    {(() => {
+                      const urgent = deadlines.filter(d => {
+                        if (d.completed) return false
+                        const today = new Date(); today.setHours(0,0,0,0)
+                        const diff = Math.ceil((new Date(d.dueDate).getTime() - today.getTime()) / 86400000)
+                        return diff <= 7
+                      })
+                      if (urgent.length === 0) return null
+                      return (
+                        <div className="mb-8 rounded-lg border border-red-200 bg-red-50 overflow-hidden">
+                          <div className="flex items-center gap-2 px-4 py-3 border-b border-red-200">
+                            <AlertCircle className="w-4 h-4 text-red-600 flex-shrink-0" />
+                            <span className="text-sm font-semibold text-red-700">
+                              {urgent.length} deadline{urgent.length > 1 ? "s" : ""} need{urgent.length === 1 ? "s" : ""} attention
+                            </span>
+                          </div>
+                          <div className="divide-y divide-red-100">
+                            {urgent.map(deadline => {
+                              const urgency = getDeadlineUrgency(deadline.dueDate, deadline.completed)
+                              let formattedDate = deadline.dueDate
+                              try { formattedDate = format(new Date(deadline.dueDate), "MMM d, yyyy") } catch {}
+                              return (
+                                <div key={deadline.id} className="flex items-center gap-3 px-4 py-2.5">
+                                  <span className={`inline-flex items-center px-2 py-0.5 rounded text-[11px] font-medium flex-shrink-0 ${urgency.color}`}>
+                                    {urgency.label}
+                                  </span>
+                                  <span className="text-sm font-medium text-[#3d3d3d] flex-1 min-w-0 truncate">{deadline.title}</span>
+                                  <span className="text-xs text-[#6b675f] flex-shrink-0">{formattedDate}</span>
+                                  <input
+                                    type="checkbox"
+                                    checked={deadline.completed}
+                                    onChange={() => handleToggleDeadlineComplete(deadline.id)}
+                                    className="w-4 h-4 flex-shrink-0 cursor-pointer accent-[#3d3d3d]"
+                                    title="Mark complete"
+                                  />
+                                </div>
+                              )
+                            })}
+                          </div>
+                        </div>
+                      )
+                    })()}
+
+                    {/* Milestones Section */}
+                    <p className="text-xs font-semibold uppercase tracking-wider text-[#9b9b9b] mb-4">Milestones</p>
+                    <div className="relative">
+                      <div className="absolute left-6 top-0 bottom-0 w-0.5 bg-[#d4cfca]"></div>
+                      {milestones.length === 0 ? (
+                        <p className="pl-16 pb-8 text-sm text-[#9b9b9b]">No milestones yet.</p>
+                      ) : milestones.map((milestone) => (
                         <div key={milestone.id} className="relative pl-16 pb-8">
-                          {/* Simple dot indicator */}
                           <div className="absolute left-4 top-2 w-5 h-5 rounded-full bg-[#3d3d3d] border-4 border-white shadow-sm"></div>
-                          
                           <div className="bg-white rounded-lg border border-[#e5e5e5] p-4 sm:p-5 shadow-sm hover:shadow-md transition-shadow">
-                            <div className="flex-1">
-                              {/* Milestone Name (Bold) */}
-                              <h3 className="text-base font-semibold text-[#3d3d3d] mb-2">
-                                {milestone.name}
-                              </h3>
-                              
-                              {/* Date and Assigned User (inline) */}
-                              <div className="flex items-center gap-4 text-sm text-[#6b675f] mb-2">
-                                <div className="flex items-center gap-1.5">
-                                  <CalendarDays className="w-4 h-4" />
-                                  <span>{milestone.date}</span>
-                                </div>
-                                <div className="flex items-center gap-1.5">
-                                  <User className="w-4 h-4" />
-                                  <span>{milestone.assignedTo}</span>
-                                </div>
+                            <h3 className="text-base font-semibold text-[#3d3d3d] mb-2">{milestone.name}</h3>
+                            <div className="flex items-center gap-4 text-sm text-[#6b675f] mb-2">
+                              <div className="flex items-center gap-1.5">
+                                <CalendarDays className="w-4 h-4" />
+                                <span>{milestone.date}</span>
                               </div>
-                              
-                              {/* Description */}
-                              <p className="text-sm text-[#6b675f]">
-                                {milestone.description}
-                              </p>
+                              <div className="flex items-center gap-1.5">
+                                <User className="w-4 h-4" />
+                                <span>{milestone.assignedTo}</span>
+                              </div>
                             </div>
+                            <p className="text-sm text-[#6b675f]">{milestone.description}</p>
                           </div>
                         </div>
                       ))}
-
                     </div>
+
+                    {/* All Deadlines Section */}
+                    <p className="text-xs font-semibold uppercase tracking-wider text-[#9b9b9b] mt-8 mb-4">All Deadlines</p>
+                    <div className="relative">
+                      <div className="absolute left-6 top-0 bottom-0 w-0.5 bg-[#d4cfca]"></div>
+                      {deadlines.length === 0 ? (
+                        <p className="pl-16 pb-8 text-sm text-[#9b9b9b]">No deadlines yet.</p>
+                      ) : deadlines.map((deadline) => {
+                        const urgency = getDeadlineUrgency(deadline.dueDate, deadline.completed)
+                        let formattedDate = deadline.dueDate
+                        try { formattedDate = format(new Date(deadline.dueDate), "MMM d, yyyy") } catch {}
+                        const dotColor = deadline.completed
+                          ? "bg-green-500"
+                          : urgency.color.includes("red") ? "bg-red-500"
+                          : urgency.color.includes("orange") ? "bg-orange-400"
+                          : urgency.color.includes("amber") ? "bg-amber-400"
+                          : urgency.color.includes("blue") ? "bg-blue-400"
+                          : "bg-[#9b9b9b]"
+                        return (
+                          <div key={deadline.id} className="relative pl-16 pb-8">
+                            <div className={`absolute left-4 top-2 w-5 h-5 rounded-full ${dotColor} border-4 border-white shadow-sm`}></div>
+                            <div className={`bg-white rounded-lg border border-[#e5e5e5] p-4 sm:p-5 shadow-sm hover:shadow-md transition-shadow ${deadline.completed ? "opacity-60" : ""}`}>
+                              <div className="flex items-start justify-between gap-3 mb-2">
+                                <h3 className={`text-base font-semibold text-[#3d3d3d] ${deadline.completed ? "line-through" : ""}`}>
+                                  {deadline.title}
+                                </h3>
+                                <div className="flex items-center gap-2 flex-shrink-0">
+                                  <span className={`inline-flex items-center px-2 py-0.5 rounded text-[11px] font-medium ${urgency.color}`}>
+                                    {urgency.label}
+                                  </span>
+                                  <input
+                                    type="checkbox"
+                                    checked={deadline.completed}
+                                    onChange={() => handleToggleDeadlineComplete(deadline.id)}
+                                    className="w-4 h-4 rounded border-[#d0d0d0] cursor-pointer accent-[#3d3d3d]"
+                                    title="Mark complete"
+                                  />
+                                </div>
+                              </div>
+                              <div className="flex items-center gap-4 text-sm text-[#6b675f] mb-2">
+                                <div className="flex items-center gap-1.5">
+                                  <CalendarDays className="w-4 h-4" />
+                                  <span>{formattedDate}</span>
+                                </div>
+                                <div className="flex items-center gap-1.5">
+                                  <User className="w-4 h-4" />
+                                  <span>{deadline.assignedTo}</span>
+                                </div>
+                              </div>
+                              {deadline.description && (
+                                <p className="text-sm text-[#6b675f]">{deadline.description}</p>
+                              )}
+                            </div>
+                          </div>
+                        )
+                      })}
+                    </div>
+
                   </div>
                 </div>
               </>
@@ -1563,6 +1734,67 @@ export default function EstateManagementPage() {
                                   <td className="px-4 py-3 text-[#6b675f] text-[13px]">{milestone.description}</td>
                                 </tr>
                               ))
+                            )}
+                          </tbody>
+                        </table>
+                      </div>
+
+                      {/* Deadlines Section */}
+                      <div className="flex items-center justify-between mt-10 mb-6">
+                        <h2 className="text-lg font-semibold text-[#3d3d3d]">Deadlines</h2>
+                        <Button
+                          onClick={() => setShowAddDeadlineModal(true)}
+                          className="bg-[#3d3d3d] text-white hover:bg-[#2d2d2d] text-sm h-9"
+                        >
+                          <Plus className="w-4 h-4 mr-1.5" />
+                          Add Deadline
+                        </Button>
+                      </div>
+
+                      <div className="bg-white rounded-lg border border-[#e5e5e5] overflow-hidden">
+                        <table className="w-full">
+                          <thead className="bg-[#ebe9e6]">
+                            <tr>
+                              <th className="text-left px-4 py-3 text-[#3d3d3d] font-medium text-[13px]">Title</th>
+                              <th className="text-left px-4 py-3 text-[#3d3d3d] font-medium text-[13px]">Due Date</th>
+                              <th className="text-left px-4 py-3 text-[#3d3d3d] font-medium text-[13px]">Days Remaining</th>
+                              <th className="text-left px-4 py-3 text-[#3d3d3d] font-medium text-[13px]">Assigned To</th>
+                              <th className="text-left px-4 py-3 text-[#3d3d3d] font-medium text-[13px]">Done</th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {deadlines.length === 0 ? (
+                              <tr>
+                                <td colSpan={5} className="px-4 py-8 text-center text-[#6b675f] text-sm">
+                                  No deadlines yet. Click "Add Deadline" to create one.
+                                </td>
+                              </tr>
+                            ) : (
+                              deadlines.map((deadline) => {
+                                const urgency = getDeadlineUrgency(deadline.dueDate, deadline.completed)
+                                let formattedDate = deadline.dueDate
+                                try { formattedDate = format(new Date(deadline.dueDate), "MMM d, yyyy") } catch {}
+                                return (
+                                  <tr key={deadline.id} className={`border-t border-[#f0f0f0] hover:bg-[#fafafa] ${deadline.completed ? "opacity-50" : ""}`}>
+                                    <td className={`px-4 py-3 text-[13px] font-medium text-[#3d3d3d] ${deadline.completed ? "line-through" : ""}`}>{deadline.title}</td>
+                                    <td className="px-4 py-3 text-[#3d3d3d] text-[13px]">{formattedDate}</td>
+                                    <td className="px-4 py-3">
+                                      <span className={`inline-flex items-center px-2 py-0.5 rounded text-[11px] font-medium ${urgency.color}`}>
+                                        {urgency.label}
+                                      </span>
+                                    </td>
+                                    <td className="px-4 py-3 text-[#6b675f] text-[13px]">{deadline.assignedTo}</td>
+                                    <td className="px-4 py-3">
+                                      <input
+                                        type="checkbox"
+                                        checked={deadline.completed}
+                                        onChange={() => handleToggleDeadlineComplete(deadline.id)}
+                                        className="w-4 h-4 rounded border-[#d0d0d0] cursor-pointer accent-[#3d3d3d]"
+                                      />
+                                    </td>
+                                  </tr>
+                                )
+                              })
                             )}
                           </tbody>
                         </table>
@@ -1763,6 +1995,132 @@ export default function EstateManagementPage() {
                   className="bg-[#3d3d3d] text-white hover:bg-[#2d2d2d] text-sm h-9"
                 >
                   Save Milestone
+                </Button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Add Deadline Modal */}
+        {showAddDeadlineModal && (
+          <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+            <div className="bg-white rounded-lg shadow-2xl w-full max-w-lg" onClick={(e) => e.stopPropagation()}>
+              {/* Modal Header */}
+              <div className="flex items-center justify-between px-6 py-4 border-b border-[#e5e5e5]">
+                <h2 className="text-lg font-semibold text-[#3d3d3d]">Add Deadline</h2>
+                <button
+                  onClick={() => {
+                    setShowAddDeadlineModal(false)
+                    setNewDeadlineTitle("")
+                    setNewDeadlineTitleCustom("")
+                    setNewDeadlineDueDate("")
+                    setNewDeadlineAssignedTo("")
+                    setNewDeadlineDescription("")
+                  }}
+                  className="p-2 hover:bg-[#f8f7f5] rounded-full transition-colors"
+                >
+                  <X className="w-5 h-5 text-[#6b675f]" />
+                </button>
+              </div>
+
+              {/* Modal Body */}
+              <div className="px-6 py-6 space-y-4">
+                {/* Title Field */}
+                <div>
+                  <label className="block text-sm font-medium text-[#3d3d3d] mb-1.5">
+                    Title <span className="text-red-600">*</span>
+                  </label>
+                  <select
+                    value={newDeadlineTitle}
+                    onChange={(e) => setNewDeadlineTitle(e.target.value)}
+                    className="w-full h-9 px-3 py-1.5 text-sm bg-white border border-[#d0d0d0] rounded-md text-[#3d3d3d] focus:outline-none focus:ring-2 focus:ring-[#3d3d3d] focus:border-transparent"
+                  >
+                    <option value="">Select a deadline type...</option>
+                    <option value="File Probate Petition">File Probate Petition</option>
+                    <option value="Publish Notice to Creditors">Publish Notice to Creditors</option>
+                    <option value="Creditor Claims Deadline">Creditor Claims Deadline</option>
+                    <option value="File Inventory of Assets">File Inventory of Assets</option>
+                    <option value="Court Hearing">Court Hearing</option>
+                    <option value="Submit Estate Tax Return">Submit Estate Tax Return</option>
+                    <option value="Submit Final Income Tax Return">Submit Final Income Tax Return</option>
+                    <option value="Distribute Assets to Beneficiaries">Distribute Assets to Beneficiaries</option>
+                    <option value="File Accounting Report">File Accounting Report</option>
+                    <option value="Estate Bank Account Closure">Estate Bank Account Closure</option>
+                    <option value="Custom...">Custom...</option>
+                  </select>
+                  {newDeadlineTitle === "Custom..." && (
+                    <Input
+                      type="text"
+                      value={newDeadlineTitleCustom}
+                      onChange={(e) => setNewDeadlineTitleCustom(e.target.value)}
+                      placeholder="Enter custom deadline title..."
+                      className="w-full h-9 mt-2 text-sm bg-white border-[#d0d0d0] text-[#3d3d3d] placeholder:text-[#9b9b9b]"
+                    />
+                  )}
+                </div>
+
+                {/* Due Date Field */}
+                <div>
+                  <label className="block text-sm font-medium text-[#3d3d3d] mb-1.5">
+                    Due Date <span className="text-red-600">*</span>
+                  </label>
+                  <Input
+                    type="date"
+                    value={newDeadlineDueDate}
+                    onChange={(e) => setNewDeadlineDueDate(e.target.value)}
+                    className="w-full h-9 text-sm bg-white border-[#d0d0d0] text-[#3d3d3d]"
+                  />
+                </div>
+
+                {/* Assigned To Field */}
+                <div>
+                  <label className="block text-sm font-medium text-[#3d3d3d] mb-1.5">
+                    Assigned To
+                  </label>
+                  <Input
+                    type="text"
+                    value={newDeadlineAssignedTo}
+                    onChange={(e) => setNewDeadlineAssignedTo(e.target.value)}
+                    placeholder="e.g., Clayton Noyes"
+                    className="w-full h-9 text-sm bg-white border-[#d0d0d0] text-[#3d3d3d] placeholder:text-[#9b9b9b]"
+                  />
+                </div>
+
+                {/* Description Field */}
+                <div>
+                  <label className="block text-sm font-medium text-[#3d3d3d] mb-1.5">
+                    Description
+                  </label>
+                  <textarea
+                    value={newDeadlineDescription}
+                    onChange={(e) => setNewDeadlineDescription(e.target.value)}
+                    placeholder="Enter deadline details..."
+                    rows={3}
+                    className="w-full px-3 py-2 text-sm bg-white border border-[#d0d0d0] rounded-md text-[#3d3d3d] placeholder:text-[#9b9b9b] focus:outline-none focus:ring-2 focus:ring-[#3d3d3d] focus:border-transparent resize-none"
+                  />
+                </div>
+              </div>
+
+              {/* Modal Footer */}
+              <div className="flex items-center justify-end gap-3 px-6 py-4 border-t border-[#e5e5e5] bg-[#fafafa]">
+                <Button
+                  onClick={() => {
+                    setShowAddDeadlineModal(false)
+                    setNewDeadlineTitle("")
+                    setNewDeadlineTitleCustom("")
+                    setNewDeadlineDueDate("")
+                    setNewDeadlineAssignedTo("")
+                    setNewDeadlineDescription("")
+                  }}
+                  className="bg-white border border-[#d0d0d0] text-[#3d3d3d] hover:bg-[#f8f7f5] text-sm h-9"
+                >
+                  Cancel
+                </Button>
+                <Button
+                  onClick={handleAddDeadline}
+                  className="bg-[#3d3d3d] text-white hover:bg-[#2d2d2d] text-sm h-9"
+                >
+                  Save Deadline
                 </Button>
               </div>
             </div>
