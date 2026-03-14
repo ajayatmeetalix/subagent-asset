@@ -6,102 +6,95 @@ import { Home, Briefcase, FileText, Trash2, Users, Building2, Copy, ChevronRight
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 
-const PROBATE_DEADLINES = [
+const DEADLINE_CATEGORIES = [
   {
-    group: "Triggered by Date of Death",
+    key: "immediate",
+    label: "Immediate actions",
+    subtitle: "First 30 days from death",
+    triggerLabel: "Date of death",
+    triggerKeyword: "closed won",
+    preview: ["Secure assets", "Notify beneficiaries", "Lodge will with court"],
     items: [
-      {
-        title: "DHCS (Medi-Cal) Notification",
-        trigger: "Date of Death",
-        window: "90 days",
-        authority: "Cal. Prob. Code §215",
-        description: "Notify DHCS of death. Failure may cause state claim complications or executor liability."
-      },
-      {
-        title: "BOE-502-D (Change of Ownership)",
-        trigger: "Date of Death",
-        window: "150 days",
-        authority: "Revenue & Taxation Code",
-        description: "File Change of Ownership statement to avoid property tax reassessment penalties."
-      },
-      {
-        title: "SEA Waiting Period",
-        trigger: "Date of Death",
-        window: "40 days minimum",
-        authority: "Cal. Prob. Code §13100",
-        description: "Minimum 40-day waiting period before filing a Small Estate Affidavit. Affidavit will be rejected if filed early."
-      },
+      { title: "Secure and inventory assets", defaultValue: 30, unit: "days" as const, description: "Identify, secure, and document all estate assets before they can be lost, stolen, or deteriorate in value." },
+      { title: "Notify beneficiaries", defaultValue: 30, unit: "days" as const, description: "Inform all named beneficiaries of the death and their interest in the estate." },
+      { title: "Lodge original will with court", defaultValue: 30, unit: "days" as const, description: "File the original will with the probate court. Most states require this within 30 days of learning of the death." },
+      { title: "Notify financial institutions", defaultValue: 30, unit: "days" as const, description: "Alert banks, brokerages, and financial institutions of the death to prevent unauthorized access." },
     ]
   },
   {
-    group: "Triggered by Hearing Date",
+    key: "probate",
+    label: "Opening probate",
+    subtitle: "30–60 days from death",
+    triggerLabel: "Date of death",
+    triggerKeyword: "closed won",
+    preview: ["File petition", "Serve notice to heirs", "Publish notice"],
     items: [
-      {
-        title: "Serve Notice of Petition to Administer Estate (DE-121)",
-        trigger: "Hearing Date",
-        window: "15+ days before hearing",
-        authority: "",
-        description: "Must be served on all heirs and beneficiaries at least 15 days before the hearing date."
-      },
-      {
-        title: "Publish Notice in Newspaper",
-        trigger: "Hearing Date",
-        window: "15+ days before hearing",
-        authority: "",
-        description: "Publication must run in a newspaper of general circulation in the county. Place the order earlier than the raw 15-day deadline to allow full publication period."
-      },
-      {
-        title: "File Probate Notes / Examiner Review",
-        trigger: "Hearing Date",
-        window: "4 court days before hearing",
-        authority: "",
-        description: "Filing after this window risks a continuance. Deadline may vary by county — verify with county-specific filing logistics."
-      },
+      { title: "File petition to open probate", defaultValue: 30, unit: "days" as const, description: "File petition with the probate court to begin formal estate administration." },
+      { title: "Serve notice of petition to heirs", defaultValue: 45, unit: "days" as const, description: "Serve all heirs and beneficiaries with notice of the petition before the court hearing." },
+      { title: "Publish notice in newspaper", defaultValue: 45, unit: "days" as const, description: "Publish notice of probate proceedings in a newspaper of general circulation in the county." },
+      { title: "File probate notes / examiner review", defaultValue: 50, unit: "days" as const, description: "Submit required probate notes or examiner review documents before the scheduled hearing." },
     ]
   },
   {
-    group: "Triggered by Letters Issuance (DE-150)",
+    key: "creditor",
+    label: "Creditor claim window",
+    subtitle: "From letters issuance",
+    triggerLabel: "Letters issued",
+    triggerKeyword: "letters",
+    preview: ["Notify known creditors", "Creditor claim period", "Allow or reject claims"],
     items: [
-      {
-        title: "Notify Franchise Tax Board (FTB)",
-        trigger: "Letters Issuance",
-        window: "90 days",
-        authority: "Cal. Prob. Code §9202",
-        description: "Send letter + certified Letters + death certificate to FTB Estate and Trust Section."
-      },
-      {
-        title: "Notify Known Creditors",
-        trigger: "Letters Issuance",
-        window: "30 days",
-        authority: "Cal. Prob. Code §9050",
-        description: "First-class mail to all known creditors. Failure to notify known creditors can create executor liability."
-      },
-      {
-        title: "File Inventory and Appraisal (DE-160)",
-        trigger: "Letters Issuance",
-        window: "120 days",
-        authority: "Cal. Prob. Code §8800",
-        description: "Probate referee must be appointed first. Filing triggers the referee's appraisal work."
-      },
-      {
-        title: "Creditor Claim Period Closes",
-        trigger: "Letters Issuance",
-        window: "4 months",
-        authority: "Cal. Prob. Code §9100",
-        description: "4 calendar months (not 120 days) from Letters issuance. No petition for final distribution can be filed until this closes."
-      },
+      { title: "Notify known creditors", defaultValue: 30, unit: "days" as const, description: "Send written notice of the death to all known creditors of the estate." },
+      { title: "File inventory and appraisal", defaultValue: 120, unit: "days" as const, description: "File a complete inventory and appraisal of all estate assets with the court." },
+      { title: "Creditor claim period closes", defaultValue: 4, unit: "months" as const, description: "The deadline by which all creditors must file claims. No final distribution can occur until this window closes." },
+      { title: "Allow or reject each creditor claim", defaultValue: 30, unit: "days" as const, description: "The executor must formally allow or reject each creditor claim filed. Failure to respond may constitute automatic allowance." },
     ]
   },
   {
-    group: "Triggered by Each Creditor Claim Filed",
+    key: "small-estate",
+    label: "Small estate affidavit",
+    subtitle: "Waiting period from death",
+    triggerLabel: "Date of death",
+    triggerKeyword: "closed won",
+    preview: ["Mandatory waiting period", "File small estate affidavit"],
     items: [
-      {
-        title: "Allow or Reject Creditor Claim",
-        trigger: "Per Creditor Claim Filed",
-        window: "30 days",
-        authority: "Cal. Prob. Code §9256",
-        description: "Fires once per claim. Failure to act within 30 days can constitute deemed allowance."
-      },
+      { title: "Minimum waiting period before filing", defaultValue: 40, unit: "days" as const, description: "Mandatory waiting period before a small estate affidavit can be submitted. Filing before this window will result in rejection." },
+    ]
+  },
+  {
+    key: "tax",
+    label: "Tax returns",
+    subtitle: "Calendar-based deadlines",
+    triggerLabel: "Date of death",
+    triggerKeyword: "closed won",
+    preview: ["Final Form 1040", "Form 706 (estate tax)", "Form 1041"],
+    items: [
+      { title: "Final Form 1040 (personal income tax)", defaultValue: 270, unit: "days" as const, description: "Due April 15 of the year following death. Adjust the calculated date to the actual April 15 deadline." },
+      { title: "Form 706 (federal estate tax return)", defaultValue: 270, unit: "days" as const, description: "Due 9 months from date of death. Only required for estates exceeding the federal exemption threshold." },
+      { title: "Form 1041 (estate income tax return)", defaultValue: 270, unit: "days" as const, description: "Due April 15 if the estate earns $600 or more in gross income during administration." },
+    ]
+  },
+  {
+    key: "trust",
+    label: "Trust administration",
+    subtitle: "From death or trust event",
+    triggerLabel: "Date of death",
+    triggerKeyword: "closed won",
+    preview: ["Notice to beneficiaries", "Contest window", "Inventory assets"],
+    items: [
+      { title: "Notice to trust beneficiaries", defaultValue: 60, unit: "days" as const, description: "The trustee must notify all beneficiaries and heirs of the trust's existence and their rights." },
+      { title: "Beneficiary trust contest window", defaultValue: 120, unit: "days" as const, description: "Window for beneficiaries to contest the trust, typically measured from when notice was mailed." },
+      { title: "File inventory of trust assets", defaultValue: 120, unit: "days" as const, description: "Compile and file a complete inventory of all assets held within the trust." },
+    ]
+  },
+  {
+    key: "will-contest",
+    label: "Will contests",
+    subtitle: "From probate filing",
+    triggerLabel: "Date of death",
+    triggerKeyword: "closed won",
+    preview: ["Will contest deadline"],
+    items: [
+      { title: "Will contest deadline", defaultValue: 90, unit: "days" as const, description: "Deadline for any interested party to contest the validity of the will. This window varies significantly by state." },
     ]
   },
 ]
@@ -191,8 +184,10 @@ export default function EstateManagementPage() {
   // Two-step modal state
   const [deadlineModalStep, setDeadlineModalStep] = useState<1 | 2>(1)
   const [deadlineModalTrigger, setDeadlineModalTrigger] = useState<string | null>(null)
-  // Letters path: checklist of selected items (all pre-checked)
+  // Checklist of selected items (all pre-checked by default)
   const [deadlineModalChecked, setDeadlineModalChecked] = useState<string[]>([])
+  // Per-item window overrides (item title → value in unit)
+  const [deadlineModalWindowOverrides, setDeadlineModalWindowOverrides] = useState<Record<string, number>>({})
   // Custom path state
   const [newDeadlineTitle, setNewDeadlineTitle] = useState("")
   const [newDeadlineDueDate, setNewDeadlineDueDate] = useState("")
@@ -200,13 +195,11 @@ export default function EstateManagementPage() {
   const [newDeadlineDescription, setNewDeadlineDescription] = useState("")
   const [newDeadlineTrigger, setNewDeadlineTrigger] = useState("")
   const [newDeadlineWindow, setNewDeadlineWindow] = useState("")
-  const [newDeadlineAuthority, setNewDeadlineAuthority] = useState("")
   const [deadlines, setDeadlines] = useState<Array<{
     id: number
     title: string
     trigger: string
     window: string
-    authority: string
     dueDate: string
     assignedTo: string
     description: string
@@ -215,25 +208,23 @@ export default function EstateManagementPage() {
   }>>([
     {
       id: 1,
-      title: "Notify Franchise Tax Board (FTB)",
-      trigger: "Letters Issuance",
+      title: "Notify FTB of death",
+      trigger: "Letters issued",
       window: "90 days",
-      authority: "Cal. Prob. Code §9202",
       dueDate: "2025-04-01",
       assignedTo: "Clayton Noyes",
-      description: "Send letter + certified Letters + death certificate to FTB Estate and Trust Section.",
+      description: "Send written notice of death to the Franchise Tax Board along with a copy of the letters.",
       completed: false,
       completedAt: undefined
     },
     {
       id: 2,
-      title: "Creditor Claim Period Closes",
-      trigger: "Letters Issuance",
+      title: "Creditor claim period closes",
+      trigger: "Letters issued",
       window: "4 months",
-      authority: "Cal. Prob. Code §9100",
       dueDate: "2025-06-15",
       assignedTo: "Jolene Smith",
-      description: "4 calendar months (not 120 days) from Letters issuance. No petition for final distribution can be filed until this closes.",
+      description: "Final date by which all creditors must file claims against the estate. No final distribution can occur until this window closes.",
       completed: false,
       completedAt: undefined
     }
@@ -639,13 +630,13 @@ export default function EstateManagementPage() {
     setDeadlineModalStep(1)
     setDeadlineModalTrigger(null)
     setDeadlineModalChecked([])
+    setDeadlineModalWindowOverrides({})
     setNewDeadlineTitle("")
     setNewDeadlineDueDate("")
     setNewDeadlineAssignedTo("")
     setNewDeadlineDescription("")
     setNewDeadlineTrigger("")
     setNewDeadlineWindow("")
-    setNewDeadlineAuthority("")
   }
 
   // Calculate due date from a milestone date string (e.g. "Mar 1, 2025") and a window string
@@ -679,24 +670,16 @@ export default function EstateManagementPage() {
   }
 
   const handleAddDeadline = () => {
-    const group = PROBATE_DEADLINES.find(g => g.group.toLowerCase().includes(
-      deadlineModalTrigger === "letters" ? "letters" :
-      deadlineModalTrigger === "death" ? "death" :
-      deadlineModalTrigger === "hearing" ? "hearing" :
-      deadlineModalTrigger === "creditor" ? "creditor claim" : ""
-    ))
-
     if (deadlineModalTrigger === "custom") {
       if (!newDeadlineTitle || !newDeadlineDueDate) {
         alert("Please fill in at least the title and due date.")
         return
       }
       setDeadlines(prev => [...prev, {
-        id: prev.length + 1,
+        id: Date.now(),
         title: newDeadlineTitle,
         trigger: newDeadlineTrigger || "Custom",
         window: newDeadlineWindow || "",
-        authority: newDeadlineAuthority || "",
         dueDate: newDeadlineDueDate,
         assignedTo: newDeadlineAssignedTo || "Unassigned",
         description: newDeadlineDescription || "",
@@ -707,27 +690,28 @@ export default function EstateManagementPage() {
       return
     }
 
-    if (!group) return
-    const milestoneDate = getMilestoneDate(
-      deadlineModalTrigger === "letters" ? "letters" :
-      deadlineModalTrigger === "death" ? "closed won" :
-      deadlineModalTrigger === "hearing" ? "hearing" : "letters"
-    )
+    const category = DEADLINE_CATEGORIES.find(c => c.key === deadlineModalTrigger)
+    if (!category) return
 
-    const toAdd = group.items
+    const milestoneDate = getMilestoneDate(category.triggerKeyword)
+
+    const toAdd = category.items
       .filter(item => deadlineModalChecked.includes(item.title))
-      .map((item, i) => ({
-        id: deadlines.length + 1 + i,
-        title: item.title,
-        trigger: item.trigger,
-        window: item.window,
-        authority: item.authority,
-        dueDate: milestoneDate ? calcDueDate(milestoneDate, item.window) : "",
-        assignedTo: "Unassigned",
-        description: item.description,
-        completed: false,
-        completedAt: undefined as string | undefined
-      }))
+      .map((item) => {
+        const overriddenValue = deadlineModalWindowOverrides[item.title] ?? item.defaultValue
+        const windowStr = `${overriddenValue} ${item.unit}`
+        return {
+          id: Date.now() + Math.random(),
+          title: item.title,
+          trigger: category.triggerLabel,
+          window: windowStr,
+          dueDate: milestoneDate ? calcDueDate(milestoneDate, windowStr) : "",
+          assignedTo: "Unassigned",
+          description: item.description,
+          completed: false,
+          completedAt: undefined as string | undefined
+        }
+      })
 
     if (toAdd.length === 0) return
     setDeadlines(prev => [...prev, ...toAdd])
@@ -2216,55 +2200,11 @@ export default function EstateManagementPage() {
 
         {/* Add Deadline Modal */}
         {showAddDeadlineModal && (() => {
-          // Trigger card definitions
-          const triggerCards = [
-            {
-              key: "death",
-              label: "Date of death",
-              items: ["DHCS (Medi-Cal) notification", "BOE-502-D", "SEA waiting period"],
-              milestoneKeyword: "closed won",
-            },
-            {
-              key: "hearing",
-              label: "Hearing date assigned",
-              items: ["Notice of petition (DE-121)", "Publish notice in newspaper", "File probate notes"],
-              milestoneKeyword: "hearing",
-            },
-            {
-              key: "letters",
-              label: "Letters issued (DE-150)",
-              items: ["FTB notice", "Notify known creditors", "File inventory and appraisal", "Creditor claim period closes"],
-              milestoneKeyword: "letters",
-            },
-            {
-              key: "creditor",
-              label: "Creditor claim filed",
-              items: ["Allow or reject creditor claim"],
-              milestoneKeyword: "letters",
-            },
-          ]
-
-          const selectedGroup = deadlineModalTrigger
-            ? PROBATE_DEADLINES.find(g => g.group.toLowerCase().includes(
-                deadlineModalTrigger === "letters" ? "letters" :
-                deadlineModalTrigger === "death" ? "death" :
-                deadlineModalTrigger === "hearing" ? "hearing" : "creditor claim"
-              ))
+          const selectedCategory = deadlineModalTrigger && deadlineModalTrigger !== "custom"
+            ? DEADLINE_CATEGORIES.find(c => c.key === deadlineModalTrigger)
             : null
 
-          const milestoneLabel =
-            deadlineModalTrigger === "letters" ? "Letters issued" :
-            deadlineModalTrigger === "death" ? "Date of death" :
-            deadlineModalTrigger === "hearing" ? "Hearing date" :
-            deadlineModalTrigger === "creditor" ? "Letters issued" : ""
-
-          const milestoneRawDate =
-            deadlineModalTrigger === "letters" ? getMilestoneDate("letters") :
-            deadlineModalTrigger === "death" ? getMilestoneDate("closed won") :
-            deadlineModalTrigger === "hearing" ? getMilestoneDate("hearing") :
-            deadlineModalTrigger === "creditor" ? getMilestoneDate("letters") : ""
-
-          // Format milestone date for display: "Mar 1, 2025"
+          const milestoneRawDate = selectedCategory ? getMilestoneDate(selectedCategory.triggerKeyword) : ""
           let milestoneDateDisplay = milestoneRawDate
           try {
             if (milestoneRawDate) {
@@ -2273,22 +2213,20 @@ export default function EstateManagementPage() {
             }
           } catch {}
 
-          // For letters path: pre-build computed rows
-          const lettersItems = selectedGroup?.items ?? []
           const checkedCount = deadlineModalChecked.length
 
           return (
             <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50 p-4" onClick={resetDeadlineModal}>
               <div
-                className="bg-white w-full max-w-[520px] border border-[#d0d0d0] rounded-sm"
+                className="bg-white w-full max-w-[520px] border border-[#d0d0d0] rounded-sm max-h-[90vh] flex flex-col"
                 onClick={(e) => e.stopPropagation()}
               >
                 {/* Header */}
-                <div className="flex items-center justify-between px-5 py-3.5 border-b border-[#e5e5e5]">
+                <div className="flex items-center justify-between px-5 py-3.5 border-b border-[#e5e5e5] flex-shrink-0">
                   <div className="flex items-center gap-2">
                     {deadlineModalStep === 2 && (
                       <button
-                        onClick={() => { setDeadlineModalStep(1); setDeadlineModalTrigger(null); setDeadlineModalChecked([]) }}
+                        onClick={() => { setDeadlineModalStep(1); setDeadlineModalTrigger(null); setDeadlineModalChecked([]); setDeadlineModalWindowOverrides({}) }}
                         className="text-[#6b675f] hover:text-[#3d3d3d] transition-colors mr-1"
                         aria-label="Back"
                       >
@@ -2296,10 +2234,8 @@ export default function EstateManagementPage() {
                       </button>
                     )}
                     <span className="text-[13px] font-semibold text-[#3d3d3d] tracking-tight">Add deadline</span>
-                    {deadlineModalStep === 2 && deadlineModalTrigger !== "custom" && (
-                      <span className="text-[11px] text-[#9b9b9b] font-normal ml-1">
-                        {triggerCards.find(c => c.key === deadlineModalTrigger)?.label}
-                      </span>
+                    {deadlineModalStep === 2 && selectedCategory && (
+                      <span className="text-[11px] text-[#9b9b9b] font-normal ml-1">{selectedCategory.label}</span>
                     )}
                   </div>
                   <button onClick={resetDeadlineModal} className="p-1 hover:bg-[#f0f0f0] rounded transition-colors" aria-label="Close">
@@ -2307,43 +2243,37 @@ export default function EstateManagementPage() {
                   </button>
                 </div>
 
-                {/* Step 1 — Trigger selection */}
+                {/* Step 1 — Category selection */}
                 {deadlineModalStep === 1 && (
-                  <div className="px-5 py-5">
-                    <p className="text-[12px] text-[#9b9b9b] mb-4 leading-relaxed">What triggered this deadline?</p>
+                  <div className="px-5 py-5 overflow-y-auto">
+                    <p className="text-[12px] text-[#9b9b9b] mb-4 leading-relaxed">What type of deadlines do you need to add?</p>
                     <div className="grid grid-cols-2 gap-2">
-                      {triggerCards.map((card) => (
+                      {DEADLINE_CATEGORIES.map((cat) => (
                         <button
-                          key={card.key}
+                          key={cat.key}
                           onClick={() => {
-                            setDeadlineModalTrigger(card.key)
+                            setDeadlineModalTrigger(cat.key)
                             setDeadlineModalStep(2)
-                            // Pre-check all items for this group
-                            const group = PROBATE_DEADLINES.find(g => g.group.toLowerCase().includes(
-                              card.key === "letters" ? "letters" :
-                              card.key === "death" ? "death" :
-                              card.key === "hearing" ? "hearing" : "creditor claim"
-                            ))
-                            if (group) setDeadlineModalChecked(group.items.map(i => i.title))
+                            setDeadlineModalChecked(cat.items.map(i => i.title))
                           }}
                           className="text-left p-3.5 border border-[#e0e0e0] rounded-sm hover:border-[#3d3d3d] hover:bg-[#fafafa] transition-colors group"
                         >
-                          <p className="text-[12px] font-semibold text-[#3d3d3d] mb-2 leading-snug group-hover:text-[#1a1a1a]">{card.label}</p>
+                          <p className="text-[12px] font-semibold text-[#3d3d3d] mb-0.5 leading-snug group-hover:text-[#1a1a1a]">{cat.label}</p>
+                          <p className="text-[10px] text-[#b0b0b0] mb-2 leading-snug">{cat.subtitle}</p>
                           <ul className="space-y-0.5">
-                            {card.items.map((item) => (
+                            {cat.preview.map((item) => (
                               <li key={item} className="text-[11px] text-[#9b9b9b] leading-snug">{item}</li>
                             ))}
                           </ul>
                         </button>
                       ))}
-                    </div>
-                    <div className="mt-4 pt-4 border-t border-[#f0f0f0]">
                       <button
                         onClick={() => { setDeadlineModalTrigger("custom"); setDeadlineModalStep(2) }}
-                        className="text-[12px] text-[#6b675f] hover:text-[#3d3d3d] transition-colors flex items-center gap-1"
+                        className="text-left p-3.5 border border-dashed border-[#e0e0e0] rounded-sm hover:border-[#3d3d3d] hover:bg-[#fafafa] transition-colors group"
                       >
-                        Custom deadline
-                        <ChevronRight className="w-3 h-3" />
+                        <p className="text-[12px] font-semibold text-[#3d3d3d] mb-0.5 leading-snug group-hover:text-[#1a1a1a]">Custom deadline</p>
+                        <p className="text-[10px] text-[#b0b0b0] mb-2 leading-snug">Any date or event</p>
+                        <p className="text-[11px] text-[#9b9b9b] leading-snug">Set your own title, due date, and notes</p>
                       </button>
                     </div>
                   </div>
@@ -2351,7 +2281,7 @@ export default function EstateManagementPage() {
 
                 {/* Step 2 — Custom form */}
                 {deadlineModalStep === 2 && deadlineModalTrigger === "custom" && (
-                  <div className="px-5 py-5 space-y-4">
+                  <div className="px-5 py-5 space-y-4 overflow-y-auto">
                     <div>
                       <label className="block text-[11px] font-semibold text-[#9b9b9b] uppercase tracking-wider mb-1.5">Title</label>
                       <Input
@@ -2398,59 +2328,84 @@ export default function EstateManagementPage() {
                   </div>
                 )}
 
-                {/* Step 2 — Letters issued: checklist path */}
-                {deadlineModalStep === 2 && deadlineModalTrigger === "letters" && (
-                  <div className="px-5 pt-4 pb-5">
-                    {/* Milestone date pill */}
-                    <div className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-[#f0f0f0] border border-[#e0e0e0] rounded-full mb-4">
-                      <span className="text-[11px] font-medium text-[#3d3d3d]">
-                        {milestoneLabel}{milestoneDateDisplay ? ` · ${milestoneDateDisplay}` : " · date not set"}
-                      </span>
-                    </div>
+                {/* Step 2 — Category checklist with editable windows */}
+                {deadlineModalStep === 2 && deadlineModalTrigger !== "custom" && selectedCategory && (
+                  <div className="flex flex-col min-h-0">
+                    <div className="px-5 pt-4 overflow-y-auto flex-1">
+                      {/* Trigger date pill */}
+                      <div className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-[#f0f0f0] border border-[#e0e0e0] rounded-full mb-4">
+                        <span className="text-[11px] font-medium text-[#3d3d3d]">
+                          {selectedCategory.triggerLabel}{milestoneDateDisplay ? ` · ${milestoneDateDisplay}` : " · date not set"}
+                        </span>
+                      </div>
 
-                    {/* Checklist */}
-                    <div className="space-y-0 divide-y divide-[#f0f0f0] border border-[#e5e5e5] rounded-sm overflow-hidden">
-                      {lettersItems.map((item) => {
-                        const checked = deadlineModalChecked.includes(item.title)
-                        const calcDate = milestoneRawDate ? calcDueDate(milestoneRawDate, item.window) : ""
-                        let calcDateDisplay = ""
-                        try { if (calcDate) calcDateDisplay = format(new Date(calcDate + "T00:00:00"), "MMM d, yyyy") } catch {}
-                        return (
-                          <label
-                            key={item.title}
-                            className="flex items-start gap-3 px-3.5 py-3 cursor-pointer hover:bg-[#fafafa] transition-colors"
-                          >
-                            <input
-                              type="checkbox"
-                              checked={checked}
-                              onChange={() => {
-                                setDeadlineModalChecked(prev =>
-                                  checked ? prev.filter(t => t !== item.title) : [...prev, item.title]
-                                )
-                              }}
-                              className="mt-0.5 w-3.5 h-3.5 rounded-none border-[#c0c0c0] accent-[#3d3d3d] cursor-pointer flex-shrink-0"
-                            />
-                            <div className="min-w-0 flex-1">
-                              <div className="flex items-baseline justify-between gap-2">
-                                <span className={`text-[12px] font-medium text-[#3d3d3d] leading-snug ${!checked ? "line-through text-[#b0b0b0]" : ""}`}>{item.title}</span>
-                                {calcDateDisplay && checked && (
-                                  <span className="text-[11px] text-[#6b675f] whitespace-nowrap flex-shrink-0">Due {calcDateDisplay}</span>
-                                )}
+                      {/* Checklist */}
+                      <div className="divide-y divide-[#f0f0f0] border border-[#e5e5e5] rounded-sm overflow-hidden mb-4">
+                        {selectedCategory.items.map((item) => {
+                          const checked = deadlineModalChecked.includes(item.title)
+                          const currentValue = deadlineModalWindowOverrides[item.title] ?? item.defaultValue
+                          const windowStr = `${currentValue} ${item.unit}`
+                          const calcDate = milestoneRawDate ? calcDueDate(milestoneRawDate, windowStr) : ""
+                          let calcDateDisplay = ""
+                          try { if (calcDate) calcDateDisplay = format(new Date(calcDate + "T00:00:00"), "MMM d, yyyy") } catch {}
+                          const isDefault = currentValue === item.defaultValue
+                          return (
+                            <div key={item.title} className={`px-3.5 py-3 transition-colors ${checked ? "hover:bg-[#fafafa]" : "bg-[#fafafa]"}`}>
+                              <div className="flex items-start gap-3">
+                                <input
+                                  type="checkbox"
+                                  checked={checked}
+                                  onChange={() => {
+                                    setDeadlineModalChecked(prev =>
+                                      checked ? prev.filter(t => t !== item.title) : [...prev, item.title]
+                                    )
+                                  }}
+                                  className="mt-0.5 w-3.5 h-3.5 rounded-none border-[#c0c0c0] accent-[#3d3d3d] cursor-pointer flex-shrink-0"
+                                />
+                                <div className="min-w-0 flex-1">
+                                  <p className={`text-[12px] font-medium leading-snug mb-1.5 ${checked ? "text-[#3d3d3d]" : "line-through text-[#c0c0c0]"}`}>
+                                    {item.title}
+                                  </p>
+                                  {checked && (
+                                    <div className="flex items-center gap-2">
+                                      <div className="flex items-center gap-1">
+                                        <input
+                                          type="number"
+                                          min={1}
+                                          value={currentValue}
+                                          onChange={(e) => {
+                                            const val = parseInt(e.target.value)
+                                            if (!isNaN(val) && val > 0) {
+                                              setDeadlineModalWindowOverrides(prev => ({ ...prev, [item.title]: val }))
+                                            }
+                                          }}
+                                          className="w-12 h-6 px-1.5 text-[11px] border border-[#d0d0d0] rounded-sm text-center text-[#3d3d3d] focus:outline-none focus:ring-1 focus:ring-[#3d3d3d]"
+                                        />
+                                        <span className="text-[11px] text-[#6b675f]">{item.unit}</span>
+                                        {!isDefault && (
+                                          <button
+                                            onClick={() => setDeadlineModalWindowOverrides(prev => { const n = { ...prev }; delete n[item.title]; return n })}
+                                            className="text-[10px] text-[#9b9b9b] hover:text-[#3d3d3d] underline ml-0.5"
+                                          >
+                                            reset
+                                          </button>
+                                        )}
+                                      </div>
+                                      {calcDateDisplay && (
+                                        <span className="text-[11px] text-[#9b9b9b]">→ {calcDateDisplay}</span>
+                                      )}
+                                    </div>
+                                  )}
+                                </div>
                               </div>
-                              <p className="text-[11px] text-[#9b9b9b] mt-0.5">{item.window} from letters</p>
                             </div>
-                          </label>
-                        )
-                      })}
+                          )
+                        })}
+                      </div>
                     </div>
-
-                    {/* Fine print */}
-                    <p className="text-[10px] text-[#b0b0b0] mt-2.5 leading-relaxed">
-                      Dates calculated from {milestoneLabel}{milestoneDateDisplay ? ` ${milestoneDateDisplay}` : ""} · Cal. Prob. Code
-                    </p>
 
                     {/* Footer */}
-                    <div className="flex items-center justify-end gap-2 mt-4 pt-4 border-t border-[#f0f0f0]">
+                    <div className="flex items-center justify-end gap-2 px-5 py-3.5 border-t border-[#f0f0f0] flex-shrink-0">
                       <Button onClick={resetDeadlineModal} className="h-8 px-4 bg-white border border-[#d0d0d0] text-[#3d3d3d] hover:bg-[#f8f7f5] text-[12px] rounded-sm font-medium">Cancel</Button>
                       <Button
                         onClick={handleAddDeadline}
@@ -2458,69 +2413,6 @@ export default function EstateManagementPage() {
                         className="h-8 px-4 bg-[#3d3d3d] text-white hover:bg-[#2d2d2d] text-[12px] rounded-sm font-medium disabled:opacity-40 disabled:cursor-not-allowed"
                       >
                         Add {checkedCount > 0 ? checkedCount : ""} deadline{checkedCount !== 1 ? "s" : ""}
-                      </Button>
-                    </div>
-                  </div>
-                )}
-
-                {/* Step 2 — All other triggers: single deadline row */}
-                {deadlineModalStep === 2 && deadlineModalTrigger !== "custom" && deadlineModalTrigger !== "letters" && selectedGroup && (
-                  <div className="px-5 pt-4 pb-5">
-                    {/* Milestone date pill */}
-                    <div className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-[#f0f0f0] border border-[#e0e0e0] rounded-full mb-4">
-                      <span className="text-[11px] font-medium text-[#3d3d3d]">
-                        {milestoneLabel}{milestoneDateDisplay ? ` · ${milestoneDateDisplay}` : " · date not set"}
-                      </span>
-                    </div>
-
-                    {/* Deadline rows */}
-                    <div className="space-y-0 divide-y divide-[#f0f0f0] border border-[#e5e5e5] rounded-sm overflow-hidden">
-                      {selectedGroup.items.map((item) => {
-                        const checked = deadlineModalChecked.includes(item.title)
-                        const calcDate = milestoneRawDate ? calcDueDate(milestoneRawDate, item.window) : ""
-                        let calcDateDisplay = ""
-                        try { if (calcDate) calcDateDisplay = format(new Date(calcDate + "T00:00:00"), "MMM d, yyyy") } catch {}
-                        return (
-                          <label
-                            key={item.title}
-                            className="flex items-start gap-3 px-3.5 py-3 cursor-pointer hover:bg-[#fafafa] transition-colors"
-                          >
-                            <input
-                              type="checkbox"
-                              checked={checked}
-                              onChange={() => {
-                                setDeadlineModalChecked(prev =>
-                                  checked ? prev.filter(t => t !== item.title) : [...prev, item.title]
-                                )
-                              }}
-                              className="mt-0.5 w-3.5 h-3.5 rounded-none border-[#c0c0c0] accent-[#3d3d3d] cursor-pointer flex-shrink-0"
-                            />
-                            <div className="min-w-0 flex-1">
-                              <div className="flex items-baseline justify-between gap-2">
-                                <span className={`text-[12px] font-medium text-[#3d3d3d] leading-snug ${!checked ? "line-through text-[#b0b0b0]" : ""}`}>{item.title}</span>
-                                {calcDateDisplay && checked && (
-                                  <span className="text-[11px] text-[#6b675f] whitespace-nowrap flex-shrink-0">Due {calcDateDisplay}</span>
-                                )}
-                              </div>
-                              <p className="text-[11px] text-[#9b9b9b] mt-0.5">{item.window}</p>
-                            </div>
-                          </label>
-                        )
-                      })}
-                    </div>
-
-                    <p className="text-[10px] text-[#b0b0b0] mt-2.5 leading-relaxed">
-                      Dates calculated from {milestoneLabel}{milestoneDateDisplay ? ` ${milestoneDateDisplay}` : ""} · Cal. Prob. Code
-                    </p>
-
-                    <div className="flex items-center justify-end gap-2 mt-4 pt-4 border-t border-[#f0f0f0]">
-                      <Button onClick={resetDeadlineModal} className="h-8 px-4 bg-white border border-[#d0d0d0] text-[#3d3d3d] hover:bg-[#f8f7f5] text-[12px] rounded-sm font-medium">Cancel</Button>
-                      <Button
-                        onClick={handleAddDeadline}
-                        disabled={deadlineModalChecked.length === 0}
-                        className="h-8 px-4 bg-[#3d3d3d] text-white hover:bg-[#2d2d2d] text-[12px] rounded-sm font-medium disabled:opacity-40 disabled:cursor-not-allowed"
-                      >
-                        Add {deadlineModalChecked.length > 0 ? deadlineModalChecked.length : ""} deadline{deadlineModalChecked.length !== 1 ? "s" : ""}
                       </Button>
                     </div>
                   </div>
