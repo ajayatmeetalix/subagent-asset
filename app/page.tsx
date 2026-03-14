@@ -261,7 +261,7 @@ export default function EstateManagementPage() {
     {
       id: "862831cb-8e8d-44b5-bde5-03583031d3cb",
       shortId: "862831cb-8e8d-...",
-      name: "Reweran Ew5tgg",
+      name: "Microsoft Zune",
       executors: [],
       status: "Active",
       createdAt: "12/18/2025",
