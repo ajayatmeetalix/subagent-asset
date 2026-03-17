@@ -97,6 +97,32 @@ const DEADLINE_CATEGORIES = [
       { title: "Will contest deadline", defaultValue: 90, unit: "days" as const, description: "Deadline for any interested party to contest the validity of the will. This window varies significantly by state." },
     ]
   },
+  {
+    key: "court-filings",
+    label: "Court filings",
+    subtitle: "From letters issuance",
+    triggerLabel: "Letters issued",
+    triggerKeyword: "letters",
+    preview: ["File accounting", "Submit to beneficiaries", "Petition to close"],
+    items: [
+      { title: "File accounting with court", defaultValue: 12, unit: "months" as const, description: "File a formal accounting of all estate income, expenses, and distributions with the probate court." },
+      { title: "Submit accounting to beneficiaries", defaultValue: 12, unit: "months" as const, description: "Provide all beneficiaries with a copy of the estate accounting prior to filing with the court." },
+      { title: "File petition to close estate", defaultValue: 18, unit: "months" as const, description: "File petition with the probate court to formally close the estate once all obligations are settled and distributions are complete." },
+    ]
+  },
+  {
+    key: "gov-notices",
+    label: "Government notices",
+    subtitle: "From letters issuance",
+    triggerLabel: "Letters issued",
+    triggerKeyword: "letters",
+    preview: ["Notice to heirs", "FTB notification (CA)", "DHHS / Medicaid notice"],
+    items: [
+      { title: "Mail notice to heirs", defaultValue: 30, unit: "days" as const, description: "Send formal written notice to all heirs of the estate. Required in most states within 30 days of letters issuance." },
+      { title: "Notify Franchise Tax Board (CA)", defaultValue: 90, unit: "days" as const, description: "Send written notice of the death to the California Franchise Tax Board. Required for California estates with state tax obligations." },
+      { title: "File notice with DHHS / Medicaid", defaultValue: 90, unit: "days" as const, description: "Notify the Department of Health and Human Services or applicable state Medicaid agency of the death to initiate benefits recovery review." },
+    ]
+  },
 ]
 
 export default function EstateManagementPage() {
@@ -188,13 +214,42 @@ export default function EstateManagementPage() {
   const [deadlineModalChecked, setDeadlineModalChecked] = useState<string[]>([])
   // Per-item window overrides (item title → value in unit)
   const [deadlineModalWindowOverrides, setDeadlineModalWindowOverrides] = useState<Record<string, number>>({})
-  // Custom path state
+  // Custom deadline path state
   const [newDeadlineTitle, setNewDeadlineTitle] = useState("")
   const [newDeadlineDueDate, setNewDeadlineDueDate] = useState("")
   const [newDeadlineAssignedTo, setNewDeadlineAssignedTo] = useState("")
   const [newDeadlineDescription, setNewDeadlineDescription] = useState("")
   const [newDeadlineTrigger, setNewDeadlineTrigger] = useState("")
   const [newDeadlineWindow, setNewDeadlineWindow] = useState("")
+  // Key date path state
+  const [keyDates, setKeyDates] = useState<Array<{
+    id: number
+    title: string
+    date: string
+    notes: string
+  }>>([
+    {
+      id: 1,
+      title: "Letters Testamentary issued",
+      date: "2025-02-14",
+      notes: "Letters issued by Los Angeles County Superior Court. Used as trigger date for creditor claim window and government notice deadlines."
+    },
+    {
+      id: 2,
+      title: "EIN created",
+      date: "2025-02-20",
+      notes: "Federal Employer Identification Number obtained from the IRS for the estate. EIN: 92-XXXXXXX."
+    },
+    {
+      id: 3,
+      title: "Date of publication",
+      date: "2025-02-28",
+      notes: "Notice to creditors published in the Los Angeles Daily Journal for 3 consecutive weeks beginning this date."
+    },
+  ])
+  const [newKeyDateTitle, setNewKeyDateTitle] = useState("")
+  const [newKeyDateDate, setNewKeyDateDate] = useState("")
+  const [newKeyDateNotes, setNewKeyDateNotes] = useState("")
   const [deadlines, setDeadlines] = useState<Array<{
     id: number
     title: string
@@ -637,6 +692,9 @@ export default function EstateManagementPage() {
     setNewDeadlineDescription("")
     setNewDeadlineTrigger("")
     setNewDeadlineWindow("")
+    setNewKeyDateTitle("")
+    setNewKeyDateDate("")
+    setNewKeyDateNotes("")
   }
 
   // Calculate due date from a milestone date string (e.g. "Mar 1, 2025") and a window string
@@ -724,6 +782,17 @@ export default function EstateManagementPage() {
         ? { ...d, completed: !d.completed, completedAt: !d.completed ? new Date().toISOString() : undefined }
         : d
     ))
+  }
+
+  const handleAddKeyDate = () => {
+    if (!newKeyDateTitle || !newKeyDateDate) return
+    setKeyDates(prev => [...prev, {
+      id: Date.now(),
+      title: newKeyDateTitle,
+      date: newKeyDateDate,
+      notes: newKeyDateNotes || ""
+    }])
+    resetDeadlineModal()
   }
 
   // Document folder structure
@@ -1665,6 +1734,13 @@ export default function EstateManagementPage() {
                       <Plus className="w-4 h-4 sm:mr-1.5" />
                       <span className="hidden sm:inline">Add Deadline</span>
                     </Button>
+                    <Button
+                      onClick={() => { setShowAddDeadlineModal(true); setDeadlineModalStep(2); setDeadlineModalTrigger("key-date") }}
+                      className="bg-[#f5f9ff] border border-[#c5d8f5] text-[#3d6baa] hover:bg-[#edf4ff] text-sm h-9 flex-1 sm:flex-initial"
+                    >
+                      <CalendarDays className="w-4 h-4 sm:mr-1.5" />
+                      <span className="hidden sm:inline">Add Key Date</span>
+                    </Button>
                   </div>
                 </div>
 
@@ -1800,14 +1876,49 @@ export default function EstateManagementPage() {
                                     {deadline.window}
                                   </span>
                                 )}
-                                {deadline.authority && (
+                                {(deadline as any).authority && (
                                   <span className="inline-flex items-center px-2 py-0.5 rounded text-[11px] font-medium bg-[#ebe9e6] text-[#6b675f]">
-                                    {deadline.authority}
+                                    {(deadline as any).authority}
                                   </span>
                                 )}
                               </div>
                               {deadline.description && (
                                 <p className="text-sm text-[#6b675f]">{deadline.description}</p>
+                              )}
+                            </div>
+                          </div>
+                        )
+                      })}
+                    </div>
+
+                    {/* Key Dates Section */}
+                    <p className="text-xs font-semibold uppercase tracking-wider text-[#9b9b9b] mt-8 mb-4">Key Dates</p>
+                    <div className="relative">
+                      <div className="absolute left-6 top-0 bottom-0 w-0.5 bg-[#c5d8f5]"></div>
+                      {keyDates.length === 0 ? (
+                        <p className="pl-16 pb-8 text-sm text-[#9b9b9b]">No key dates recorded yet.</p>
+                      ) : keyDates.map((kd) => {
+                        let formattedDate = kd.date
+                        try { formattedDate = format(new Date(kd.date + "T00:00:00"), "MMM d, yyyy") } catch {}
+                        return (
+                          <div key={kd.id} className="relative pl-16 pb-8">
+                            <div className="absolute left-4 top-2 w-5 h-5 rounded-full bg-[#5b8dd9] border-4 border-white shadow-sm flex items-center justify-center">
+                            </div>
+                            <div className="bg-[#f5f9ff] rounded-lg border border-[#c5d8f5] p-4 sm:p-5 shadow-sm hover:shadow-md transition-shadow">
+                              <div className="flex items-start justify-between gap-3 mb-2">
+                                <h3 className="text-base font-semibold text-[#3d3d3d]">{kd.title}</h3>
+                                <span className="inline-flex items-center px-2 py-0.5 rounded text-[11px] font-medium bg-[#ddeeff] text-[#3d6baa] flex-shrink-0">
+                                  Key date
+                                </span>
+                              </div>
+                              <div className="flex items-center gap-4 text-sm text-[#6b675f]">
+                                <div className="flex items-center gap-1.5">
+                                  <CalendarDays className="w-4 h-4 text-[#5b8dd9]" />
+                                  <span>{formattedDate}</span>
+                                </div>
+                              </div>
+                              {kd.notes && (
+                                <p className="text-sm text-[#6b675f] mt-2">{kd.notes}</p>
                               )}
                             </div>
                           </div>
@@ -1940,7 +2051,7 @@ export default function EstateManagementPage() {
                           className="bg-[#3d3d3d] text-white hover:bg-[#2d2d2d] text-sm h-9"
                         >
                           <Plus className="w-4 h-4 mr-1.5" />
-                          Add Deadline
+                          Add
                         </Button>
                       </div>
 
@@ -1996,6 +2107,54 @@ export default function EstateManagementPage() {
                           </tbody>
                         </table>
                       </div>
+
+                      {/* Key Dates Section */}
+                      <div className="flex items-center justify-between mt-10 mb-6">
+                        <div>
+                          <h2 className="text-lg font-semibold text-[#3d3d3d]">Key Dates</h2>
+                          <p className="text-[12px] text-[#9b9b9b] mt-0.5">Reference dates — no deadline logic, just dates to track and refer back to</p>
+                        </div>
+                        <Button
+                          onClick={() => { setShowAddDeadlineModal(true); setDeadlineModalStep(2); setDeadlineModalTrigger("key-date") }}
+                          className="bg-white border border-[#d0d0d0] text-[#3d3d3d] hover:bg-[#f8f7f5] text-sm h-9"
+                        >
+                          <Plus className="w-4 h-4 mr-1.5" />
+                          Add Key Date
+                        </Button>
+                      </div>
+                      <div className="bg-white rounded-lg border border-[#e5e5e5] overflow-x-auto">
+                        <table className="w-full">
+                          <thead className="bg-[#f5f9ff]">
+                            <tr>
+                              <th className="text-left px-4 py-3 text-[#3d3d3d] font-medium text-[13px]">Title</th>
+                              <th className="text-left px-4 py-3 text-[#3d3d3d] font-medium text-[13px]">Date</th>
+                              <th className="text-left px-4 py-3 text-[#3d3d3d] font-medium text-[13px]">Notes</th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {keyDates.length === 0 ? (
+                              <tr>
+                                <td colSpan={3} className="px-4 py-8 text-center text-[#6b675f] text-sm">
+                                  No key dates yet. Use "Add Key Date" to record a reference date.
+                                </td>
+                              </tr>
+                            ) : (
+                              keyDates.map((kd) => {
+                                let formattedDate = kd.date
+                                try { formattedDate = format(new Date(kd.date + "T00:00:00"), "MMM d, yyyy") } catch {}
+                                return (
+                                  <tr key={kd.id} className="border-t border-[#f0f0f0] hover:bg-[#fafafa]">
+                                    <td className="px-4 py-3 text-[13px] font-medium text-[#3d3d3d]">{kd.title}</td>
+                                    <td className="px-4 py-3 text-[#3d3d3d] text-[13px] whitespace-nowrap">{formattedDate}</td>
+                                    <td className="px-4 py-3 text-[#6b675f] text-[13px]">{kd.notes || "—"}</td>
+                                  </tr>
+                                )
+                              })
+                            )}
+                          </tbody>
+                        </table>
+                      </div>
+
                     </div>
                   </div>
                 ) : (
@@ -2233,7 +2392,9 @@ export default function EstateManagementPage() {
                         <ChevronRight className="w-4 h-4 rotate-180" />
                       </button>
                     )}
-                    <span className="text-[13px] font-semibold text-[#3d3d3d] tracking-tight">Add deadline</span>
+                    <span className="text-[13px] font-semibold text-[#3d3d3d] tracking-tight">
+                      {deadlineModalTrigger === "key-date" ? "Add key date" : "Add deadline"}
+                    </span>
                     {deadlineModalStep === 2 && selectedCategory && (
                       <span className="text-[11px] text-[#9b9b9b] font-normal ml-1">{selectedCategory.label}</span>
                     )}
@@ -2246,7 +2407,7 @@ export default function EstateManagementPage() {
                 {/* Step 1 — Category selection */}
                 {deadlineModalStep === 1 && (
                   <div className="px-5 py-5 overflow-y-auto">
-                    <p className="text-[12px] text-[#9b9b9b] mb-4 leading-relaxed">What type of deadlines do you need to add?</p>
+                    <p className="text-[12px] text-[#9b9b9b] mb-4 leading-relaxed">What would you like to add?</p>
                     <div className="grid grid-cols-2 gap-2">
                       {DEADLINE_CATEGORIES.map((cat) => (
                         <button
@@ -2256,7 +2417,7 @@ export default function EstateManagementPage() {
                             setDeadlineModalStep(2)
                             setDeadlineModalChecked(cat.items.map(i => i.title))
                           }}
-                          className="text-left p-3.5 border border-[#e0e0e0] rounded-sm hover:border-[#3d3d3d] hover:bg-[#fafafa] transition-colors group"
+                          className="text-left p-3.5 border border-[#e0e0e0] rounded-sm hover:border-[#3d3d3d] hover:bg-[#fafafa] transition-colors group h-full"
                         >
                           <p className="text-[12px] font-semibold text-[#3d3d3d] mb-0.5 leading-snug group-hover:text-[#1a1a1a]">{cat.label}</p>
                           <p className="text-[10px] text-[#b0b0b0] mb-2 leading-snug">{cat.subtitle}</p>
@@ -2269,11 +2430,24 @@ export default function EstateManagementPage() {
                       ))}
                       <button
                         onClick={() => { setDeadlineModalTrigger("custom"); setDeadlineModalStep(2) }}
-                        className="text-left p-3.5 border border-dashed border-[#e0e0e0] rounded-sm hover:border-[#3d3d3d] hover:bg-[#fafafa] transition-colors group"
+                        className="text-left p-3.5 border border-dashed border-[#e0e0e0] rounded-sm hover:border-[#3d3d3d] hover:bg-[#fafafa] transition-colors group h-full"
                       >
                         <p className="text-[12px] font-semibold text-[#3d3d3d] mb-0.5 leading-snug group-hover:text-[#1a1a1a]">Custom deadline</p>
                         <p className="text-[10px] text-[#b0b0b0] mb-2 leading-snug">Any date or event</p>
                         <p className="text-[11px] text-[#9b9b9b] leading-snug">Set your own title, due date, and notes</p>
+                      </button>
+                      <button
+                        onClick={() => { setDeadlineModalTrigger("key-date"); setDeadlineModalStep(2) }}
+                        className="text-left p-3.5 border border-dashed border-[#c5d8f5] bg-[#f5f9ff] rounded-sm hover:border-[#3d3d3d] hover:bg-[#edf4ff] transition-colors group col-span-2"
+                      >
+                        <div className="flex items-start gap-3">
+                          <CalendarDays className="w-4 h-4 text-[#5b8dd9] mt-0.5 flex-shrink-0" />
+                          <div>
+                            <p className="text-[12px] font-semibold text-[#3d3d3d] mb-0.5 leading-snug group-hover:text-[#1a1a1a]">Key date</p>
+                            <p className="text-[10px] text-[#8aabdc] mb-1 leading-snug">Record a date for reference</p>
+                            <p className="text-[11px] text-[#7b9bbf] leading-snug">Log a date that already happened or is scheduled — no deadline logic, just a record to refer back to</p>
+                          </div>
+                        </div>
                       </button>
                     </div>
                   </div>
@@ -2328,8 +2502,54 @@ export default function EstateManagementPage() {
                   </div>
                 )}
 
+                {/* Step 2 — Key date form */}
+                {deadlineModalStep === 2 && deadlineModalTrigger === "key-date" && (
+                  <div className="px-5 py-5 space-y-4 overflow-y-auto">
+                    <p className="text-[12px] text-[#9b9b9b] leading-relaxed">Record a date for reference — no due date logic, just something to track and refer back to on the timeline.</p>
+                    <div>
+                      <label className="block text-[11px] font-semibold text-[#9b9b9b] uppercase tracking-wider mb-1.5">Title <span className="text-red-400">*</span></label>
+                      <Input
+                        type="text"
+                        value={newKeyDateTitle}
+                        onChange={(e) => setNewKeyDateTitle(e.target.value)}
+                        placeholder="e.g., EIN created, Date of order, FTB notice received"
+                        className="h-8 text-[13px] bg-white border-[#d0d0d0] text-[#3d3d3d] placeholder:text-[#c0c0c0] rounded-sm"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-[11px] font-semibold text-[#9b9b9b] uppercase tracking-wider mb-1.5">Date <span className="text-red-400">*</span></label>
+                      <Input
+                        type="date"
+                        value={newKeyDateDate}
+                        onChange={(e) => setNewKeyDateDate(e.target.value)}
+                        className="h-8 text-[13px] bg-white border-[#d0d0d0] text-[#3d3d3d] rounded-sm"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-[11px] font-semibold text-[#9b9b9b] uppercase tracking-wider mb-1.5">Notes</label>
+                      <textarea
+                        value={newKeyDateNotes}
+                        onChange={(e) => setNewKeyDateNotes(e.target.value)}
+                        placeholder="Optional context or notes"
+                        rows={3}
+                        className="w-full px-3 py-2 text-[13px] bg-white border border-[#d0d0d0] rounded-sm text-[#3d3d3d] placeholder:text-[#c0c0c0] focus:outline-none focus:ring-1 focus:ring-[#3d3d3d] focus:border-transparent resize-none"
+                      />
+                    </div>
+                    <div className="flex items-center justify-end gap-2 pt-1 border-t border-[#f0f0f0]">
+                      <Button onClick={resetDeadlineModal} className="h-8 px-4 bg-white border border-[#d0d0d0] text-[#3d3d3d] hover:bg-[#f8f7f5] text-[12px] rounded-sm font-medium">Cancel</Button>
+                      <Button
+                        onClick={handleAddKeyDate}
+                        disabled={!newKeyDateTitle || !newKeyDateDate}
+                        className="h-8 px-4 bg-[#3d3d3d] text-white hover:bg-[#2d2d2d] text-[12px] rounded-sm font-medium disabled:opacity-40 disabled:cursor-not-allowed"
+                      >
+                        Save key date
+                      </Button>
+                    </div>
+                  </div>
+                )}
+
                 {/* Step 2 — Category checklist with editable windows */}
-                {deadlineModalStep === 2 && deadlineModalTrigger !== "custom" && selectedCategory && (
+                {deadlineModalStep === 2 && deadlineModalTrigger !== "custom" && deadlineModalTrigger !== "key-date" && selectedCategory && (
                   <div className="flex flex-col min-h-0">
                     <div className="px-5 pt-4 overflow-y-auto flex-1">
                       {/* Trigger date pill */}
