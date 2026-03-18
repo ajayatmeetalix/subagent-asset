@@ -1792,35 +1792,8 @@ export default function EstateManagementPage() {
                       )
                     })()}
 
-                    {/* Milestones Section */}
-                    <p className="text-xs font-semibold uppercase tracking-wider text-[#9b9b9b] mb-4">Milestones</p>
-                    <div className="relative">
-                      <div className="absolute left-6 top-0 bottom-0 w-0.5 bg-[#d4cfca]"></div>
-                      {milestones.length === 0 ? (
-                        <p className="pl-16 pb-8 text-sm text-[#9b9b9b]">No milestones yet.</p>
-                      ) : milestones.map((milestone) => (
-                        <div key={milestone.id} className="relative pl-16 pb-8">
-                          <div className="absolute left-4 top-2 w-5 h-5 rounded-full bg-[#3d3d3d] border-4 border-white shadow-sm"></div>
-                          <div className="bg-white rounded-lg border border-[#e5e5e5] p-4 sm:p-5 shadow-sm hover:shadow-md transition-shadow">
-                            <h3 className="text-base font-semibold text-[#3d3d3d] mb-2">{milestone.name}</h3>
-                            <div className="flex items-center gap-4 text-sm text-[#6b675f] mb-2">
-                              <div className="flex items-center gap-1.5">
-                                <CalendarDays className="w-4 h-4" />
-                                <span>{milestone.date}</span>
-                              </div>
-                              <div className="flex items-center gap-1.5">
-                                <User className="w-4 h-4" />
-                                <span>{milestone.assignedTo}</span>
-                              </div>
-                            </div>
-                            <p className="text-sm text-[#6b675f]">{milestone.description}</p>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-
                     {/* All Deadlines Section */}
-                    <p className="text-xs font-semibold uppercase tracking-wider text-[#9b9b9b] mt-8 mb-4">All Deadlines</p>
+                    <p className="text-xs font-semibold uppercase tracking-wider text-[#9b9b9b] mb-4">All Deadlines</p>
                     <div className="relative">
                       <div className="absolute left-6 top-0 bottom-0 w-0.5 bg-[#d4cfca]"></div>
                       {deadlines.length === 0 ? (
@@ -1889,6 +1862,33 @@ export default function EstateManagementPage() {
                           </div>
                         )
                       })}
+                    </div>
+
+                    {/* Milestones Section */}
+                    <p className="text-xs font-semibold uppercase tracking-wider text-[#9b9b9b] mt-8 mb-4">Milestones</p>
+                    <div className="relative">
+                      <div className="absolute left-6 top-0 bottom-0 w-0.5 bg-[#d4cfca]"></div>
+                      {milestones.length === 0 ? (
+                        <p className="pl-16 pb-8 text-sm text-[#9b9b9b]">No milestones yet.</p>
+                      ) : milestones.map((milestone) => (
+                        <div key={milestone.id} className="relative pl-16 pb-8">
+                          <div className="absolute left-4 top-2 w-5 h-5 rounded-full bg-[#3d3d3d] border-4 border-white shadow-sm"></div>
+                          <div className="bg-white rounded-lg border border-[#e5e5e5] p-4 sm:p-5 shadow-sm hover:shadow-md transition-shadow">
+                            <h3 className="text-base font-semibold text-[#3d3d3d] mb-2">{milestone.name}</h3>
+                            <div className="flex items-center gap-4 text-sm text-[#6b675f] mb-2">
+                              <div className="flex items-center gap-1.5">
+                                <CalendarDays className="w-4 h-4" />
+                                <span>{milestone.date}</span>
+                              </div>
+                              <div className="flex items-center gap-1.5">
+                                <User className="w-4 h-4" />
+                                <span>{milestone.assignedTo}</span>
+                              </div>
+                            </div>
+                            <p className="text-sm text-[#6b675f]">{milestone.description}</p>
+                          </div>
+                        </div>
+                      ))}
                     </div>
 
                     {/* Key Dates Section */}
@@ -1999,59 +1999,15 @@ export default function EstateManagementPage() {
                 {activeTab === "timeline" ? (
                   <div className="flex-1 overflow-auto p-6">
                     <div className="max-w-5xl mx-auto">
-                      {/* Header with Add Milestone button */}
-                      <div className="flex items-center justify-between mb-6">
-                        <h2 className="text-lg font-semibold text-[#3d3d3d]">Milestones Overview</h2>
-                        <Button 
-                          onClick={() => setShowAddMilestoneModal(true)}
-                          className="bg-[#3d3d3d] text-white hover:bg-[#2d2d2d] text-sm h-9"
-                        >
-                          <Plus className="w-4 h-4 mr-1.5" />
-                          Add Milestone
-                        </Button>
-                      </div>
-                      
-                      {/* Milestones Table */}
-                      <div className="bg-white rounded-lg border border-[#e5e5e5] overflow-hidden">
-                        <table className="w-full">
-                          <thead className="bg-[#ebe9e6]">
-                            <tr>
-                              <th className="text-left px-4 py-3 text-[#3d3d3d] font-medium text-[13px]">Milestone</th>
-                              <th className="text-left px-4 py-3 text-[#3d3d3d] font-medium text-[13px]">Date</th>
-                              <th className="text-left px-4 py-3 text-[#3d3d3d] font-medium text-[13px]">Assigned To</th>
-                              <th className="text-left px-4 py-3 text-[#3d3d3d] font-medium text-[13px]">Notes</th>
-                            </tr>
-                          </thead>
-                          <tbody>
-                            {milestones.length === 0 ? (
-                              <tr>
-                                <td colSpan={4} className="px-4 py-8 text-center text-[#6b675f] text-sm">
-                                  No milestones yet. Click "Add Milestone" to create one.
-                                </td>
-                              </tr>
-                            ) : (
-                              milestones.map((milestone) => (
-                                <tr key={milestone.id} className="border-t border-[#f0f0f0] hover:bg-[#fafafa]">
-                                  <td className="px-4 py-3 text-[#3d3d3d] text-[13px] font-medium">{milestone.name}</td>
-                                  <td className="px-4 py-3 text-[#3d3d3d] text-[13px]">{milestone.date}</td>
-                                  <td className="px-4 py-3 text-[#6b675f] text-[13px]">{milestone.assignedTo}</td>
-                                  <td className="px-4 py-3 text-[#6b675f] text-[13px]">{milestone.description}</td>
-                                </tr>
-                              ))
-                            )}
-                          </tbody>
-                        </table>
-                      </div>
-
                       {/* Deadlines Section */}
-                      <div className="flex items-center justify-between mt-10 mb-6">
+                      <div className="flex items-center justify-between mb-6">
                         <h2 className="text-lg font-semibold text-[#3d3d3d]">Deadlines</h2>
                         <Button
                           onClick={() => { setShowAddDeadlineModal(true); setDeadlineModalStep(1); setDeadlineModalTrigger(null); setDeadlineModalChecked([]) }}
                           className="bg-[#3d3d3d] text-white hover:bg-[#2d2d2d] text-sm h-9"
                         >
                           <Plus className="w-4 h-4 mr-1.5" />
-                          Add
+                          Add Deadline
                         </Button>
                       </div>
 
@@ -2103,6 +2059,48 @@ export default function EstateManagementPage() {
                                   </tr>
                                 )
                               })
+                            )}
+                          </tbody>
+                        </table>
+                      </div>
+
+                      {/* Milestones Section */}
+                      <div className="flex items-center justify-between mt-10 mb-6">
+                        <h2 className="text-lg font-semibold text-[#3d3d3d]">Milestones</h2>
+                        <Button
+                          onClick={() => setShowAddMilestoneModal(true)}
+                          className="bg-[#3d3d3d] text-white hover:bg-[#2d2d2d] text-sm h-9"
+                        >
+                          <Plus className="w-4 h-4 mr-1.5" />
+                          Add Milestone
+                        </Button>
+                      </div>
+                      <div className="bg-white rounded-lg border border-[#e5e5e5] overflow-hidden">
+                        <table className="w-full">
+                          <thead className="bg-[#ebe9e6]">
+                            <tr>
+                              <th className="text-left px-4 py-3 text-[#3d3d3d] font-medium text-[13px]">Milestone</th>
+                              <th className="text-left px-4 py-3 text-[#3d3d3d] font-medium text-[13px]">Date</th>
+                              <th className="text-left px-4 py-3 text-[#3d3d3d] font-medium text-[13px]">Assigned To</th>
+                              <th className="text-left px-4 py-3 text-[#3d3d3d] font-medium text-[13px]">Notes</th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {milestones.length === 0 ? (
+                              <tr>
+                                <td colSpan={4} className="px-4 py-8 text-center text-[#6b675f] text-sm">
+                                  No milestones yet. Click "Add Milestone" to create one.
+                                </td>
+                              </tr>
+                            ) : (
+                              milestones.map((milestone) => (
+                                <tr key={milestone.id} className="border-t border-[#f0f0f0] hover:bg-[#fafafa]">
+                                  <td className="px-4 py-3 text-[#3d3d3d] text-[13px] font-medium">{milestone.name}</td>
+                                  <td className="px-4 py-3 text-[#3d3d3d] text-[13px]">{milestone.date}</td>
+                                  <td className="px-4 py-3 text-[#6b675f] text-[13px]">{milestone.assignedTo}</td>
+                                  <td className="px-4 py-3 text-[#6b675f] text-[13px]">{milestone.description}</td>
+                                </tr>
+                              ))
                             )}
                           </tbody>
                         </table>
