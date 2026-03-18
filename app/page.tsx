@@ -403,7 +403,7 @@ export default function EstateManagementPage() {
     {
       id: "430ce962-c0bd-...",
       shortId: "430ce962-c0bd-...",
-      name: "Ping Li",
+      name: "iPod Nano",
       executors: [],
       status: "Active",
       createdAt: "05/30/2025",
