@@ -173,34 +173,29 @@ export default function EstateManagementPage() {
   const [newMilestoneName, setNewMilestoneName] = useState("")
   const [newMilestoneDate, setNewMilestoneDate] = useState("")
   const [newMilestoneDescription, setNewMilestoneDescription] = useState("")
-  const [newMilestoneAssignedTo, setNewMilestoneAssignedTo] = useState("")
   const [milestones, setMilestones] = useState([
     {
       id: 1,
       name: "Closed WON",
       date: "Oct 12, 2024",
-      assignedTo: "System",
       description: "Estate case accepted and initiated."
     },
     {
       id: 2,
       name: "K.Y.C.",
       date: "Nov 1, 2024",
-      assignedTo: "Jolene Smith",
       description: "Know Your Customer verification completed."
     },
     {
       id: 3,
       name: "Determine Legal Path",
       date: "Feb 1, 2025",
-      assignedTo: "Clayton Noyes",
       description: "Legal pathway for estate administration determined."
     },
     {
       id: 4,
       name: "File Tax Return",
       date: "Jul 12, 2025",
-      assignedTo: "Unassigned",
       description: "Estate tax return filed with appropriate authorities."
     }
   ])
@@ -217,7 +212,6 @@ export default function EstateManagementPage() {
   // Custom deadline path state
   const [newDeadlineTitle, setNewDeadlineTitle] = useState("")
   const [newDeadlineDueDate, setNewDeadlineDueDate] = useState("")
-  const [newDeadlineAssignedTo, setNewDeadlineAssignedTo] = useState("")
   const [newDeadlineDescription, setNewDeadlineDescription] = useState("")
   const [newDeadlineTrigger, setNewDeadlineTrigger] = useState("")
   const [newDeadlineWindow, setNewDeadlineWindow] = useState("")
@@ -256,7 +250,6 @@ export default function EstateManagementPage() {
     trigger: string
     window: string
     dueDate: string
-    assignedTo: string
     description: string
     completed: boolean
     completedAt: string | undefined
@@ -267,7 +260,6 @@ export default function EstateManagementPage() {
       trigger: "Letters issued",
       window: "90 days",
       dueDate: "2025-04-01",
-      assignedTo: "Clayton Noyes",
       description: "Send written notice of death to the Franchise Tax Board along with a copy of the letters.",
       completed: false,
       completedAt: undefined
@@ -278,7 +270,6 @@ export default function EstateManagementPage() {
       trigger: "Letters issued",
       window: "4 months",
       dueDate: "2025-06-15",
-      assignedTo: "Jolene Smith",
       description: "Final date by which all creditors must file claims against the estate. No final distribution can occur until this window closes.",
       completed: false,
       completedAt: undefined
@@ -652,7 +643,6 @@ export default function EstateManagementPage() {
       id: milestones.length + 1,
       name: newMilestoneName,
       date: newMilestoneDate,
-      assignedTo: newMilestoneAssignedTo || "Unassigned",
       description: newMilestoneDescription || ""
     }
 
@@ -662,7 +652,6 @@ export default function EstateManagementPage() {
     setNewMilestoneName("")
     setNewMilestoneDate("")
     setNewMilestoneDescription("")
-    setNewMilestoneAssignedTo("")
     setShowAddMilestoneModal(false)
   }
 
@@ -688,7 +677,6 @@ export default function EstateManagementPage() {
     setDeadlineModalWindowOverrides({})
     setNewDeadlineTitle("")
     setNewDeadlineDueDate("")
-    setNewDeadlineAssignedTo("")
     setNewDeadlineDescription("")
     setNewDeadlineTrigger("")
     setNewDeadlineWindow("")
@@ -739,7 +727,6 @@ export default function EstateManagementPage() {
         trigger: newDeadlineTrigger || "Custom",
         window: newDeadlineWindow || "",
         dueDate: newDeadlineDueDate,
-        assignedTo: newDeadlineAssignedTo || "Unassigned",
         description: newDeadlineDescription || "",
         completed: false,
         completedAt: undefined
@@ -764,7 +751,6 @@ export default function EstateManagementPage() {
           trigger: category.triggerLabel,
           window: windowStr,
           dueDate: milestoneDate ? calcDueDate(milestoneDate, windowStr) : "",
-          assignedTo: "Unassigned",
           description: item.description,
           completed: false,
           completedAt: undefined as string | undefined
@@ -1835,10 +1821,6 @@ export default function EstateManagementPage() {
                                   <CalendarDays className="w-4 h-4" />
                                   <span>{formattedDate}</span>
                                 </div>
-                                <div className="flex items-center gap-1.5">
-                                  <User className="w-4 h-4" />
-                                  <span>{deadline.assignedTo}</span>
-                                </div>
                                 {deadline.trigger && (
                                   <span className="inline-flex items-center px-2 py-0.5 rounded text-[11px] font-medium bg-[#ebe9e6] text-[#6b675f]">
                                     Trigger: {deadline.trigger}
@@ -1879,10 +1861,6 @@ export default function EstateManagementPage() {
                               <div className="flex items-center gap-1.5">
                                 <CalendarDays className="w-4 h-4" />
                                 <span>{milestone.date}</span>
-                              </div>
-                              <div className="flex items-center gap-1.5">
-                                <User className="w-4 h-4" />
-                                <span>{milestone.assignedTo}</span>
                               </div>
                             </div>
                             <p className="text-sm text-[#6b675f]">{milestone.description}</p>
@@ -2020,14 +1998,13 @@ export default function EstateManagementPage() {
                               <th className="text-left px-4 py-3 text-[#3d3d3d] font-medium text-[13px]">Window</th>
                               <th className="text-left px-4 py-3 text-[#3d3d3d] font-medium text-[13px]">Due Date</th>
                               <th className="text-left px-4 py-3 text-[#3d3d3d] font-medium text-[13px]">Status</th>
-                              <th className="text-left px-4 py-3 text-[#3d3d3d] font-medium text-[13px]">Assigned To</th>
                               <th className="text-left px-4 py-3 text-[#3d3d3d] font-medium text-[13px]">Done</th>
                             </tr>
                           </thead>
                           <tbody>
                             {deadlines.length === 0 ? (
                               <tr>
-                                <td colSpan={7} className="px-4 py-8 text-center text-[#6b675f] text-sm">
+                                <td colSpan={6} className="px-4 py-8 text-center text-[#6b675f] text-sm">
                                   No deadlines yet. Click "Add Deadline" to create one.
                                 </td>
                               </tr>
@@ -2047,7 +2024,6 @@ export default function EstateManagementPage() {
                                         {urgency.label}
                                       </span>
                                     </td>
-                                    <td className="px-4 py-3 text-[#6b675f] text-[13px]">{deadline.assignedTo}</td>
                                     <td className="px-4 py-3">
                                       <input
                                         type="checkbox"
@@ -2081,14 +2057,13 @@ export default function EstateManagementPage() {
                             <tr>
                               <th className="text-left px-4 py-3 text-[#3d3d3d] font-medium text-[13px]">Milestone</th>
                               <th className="text-left px-4 py-3 text-[#3d3d3d] font-medium text-[13px]">Date</th>
-                              <th className="text-left px-4 py-3 text-[#3d3d3d] font-medium text-[13px]">Assigned To</th>
                               <th className="text-left px-4 py-3 text-[#3d3d3d] font-medium text-[13px]">Notes</th>
                             </tr>
                           </thead>
                           <tbody>
                             {milestones.length === 0 ? (
                               <tr>
-                                <td colSpan={4} className="px-4 py-8 text-center text-[#6b675f] text-sm">
+                                <td colSpan={3} className="px-4 py-8 text-center text-[#6b675f] text-sm">
                                   No milestones yet. Click "Add Milestone" to create one.
                                 </td>
                               </tr>
@@ -2097,7 +2072,6 @@ export default function EstateManagementPage() {
                                 <tr key={milestone.id} className="border-t border-[#f0f0f0] hover:bg-[#fafafa]">
                                   <td className="px-4 py-3 text-[#3d3d3d] text-[13px] font-medium">{milestone.name}</td>
                                   <td className="px-4 py-3 text-[#3d3d3d] text-[13px]">{milestone.date}</td>
-                                  <td className="px-4 py-3 text-[#6b675f] text-[13px]">{milestone.assignedTo}</td>
                                   <td className="px-4 py-3 text-[#6b675f] text-[13px]">{milestone.description}</td>
                                 </tr>
                               ))
@@ -2253,7 +2227,6 @@ export default function EstateManagementPage() {
                     setNewMilestoneName("")
                     setNewMilestoneDate("")
                     setNewMilestoneDescription("")
-                    setNewMilestoneAssignedTo("")
                   }}
                   className="p-2 hover:bg-[#f8f7f5] rounded-full transition-colors"
                 >
@@ -2301,20 +2274,6 @@ export default function EstateManagementPage() {
                   />
                 </div>
 
-                {/* Assigned To Field */}
-                <div>
-                  <label className="block text-sm font-medium text-[#3d3d3d] mb-1.5">
-                    Assigned To
-                  </label>
-                  <Input
-                    type="text"
-                    value={newMilestoneAssignedTo}
-                    onChange={(e) => setNewMilestoneAssignedTo(e.target.value)}
-                    placeholder="e.g., John Smith"
-                    className="w-full h-9 text-sm bg-white border-[#d0d0d0] text-[#3d3d3d] placeholder:text-[#9b9b9b]"
-                  />
-                </div>
-
                 {/* Description Field */}
                 <div>
                   <label className="block text-sm font-medium text-[#3d3d3d] mb-1.5">
@@ -2338,7 +2297,6 @@ export default function EstateManagementPage() {
                     setNewMilestoneName("")
                     setNewMilestoneDate("")
                     setNewMilestoneDescription("")
-                    setNewMilestoneAssignedTo("")
                   }}
                   className="bg-white border border-[#d0d0d0] text-[#3d3d3d] hover:bg-[#f8f7f5] text-sm h-9"
                 >
@@ -2471,16 +2429,6 @@ export default function EstateManagementPage() {
                         value={newDeadlineDueDate}
                         onChange={(e) => setNewDeadlineDueDate(e.target.value)}
                         className="h-8 text-[13px] bg-white border-[#d0d0d0] text-[#3d3d3d] rounded-sm"
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-[11px] font-semibold text-[#9b9b9b] uppercase tracking-wider mb-1.5">Assigned to</label>
-                      <Input
-                        type="text"
-                        value={newDeadlineAssignedTo}
-                        onChange={(e) => setNewDeadlineAssignedTo(e.target.value)}
-                        placeholder="e.g., Clayton Noyes"
-                        className="h-8 text-[13px] bg-white border-[#d0d0d0] text-[#3d3d3d] placeholder:text-[#c0c0c0] rounded-sm"
                       />
                     </div>
                     <div>
@@ -3041,7 +2989,6 @@ export default function EstateManagementPage() {
                   setNewMilestoneName("")
                   setNewMilestoneDate("")
                   setNewMilestoneDescription("")
-                  setNewMilestoneAssignedTo("")
                 }}
                 className="p-2 hover:bg-[#f8f7f5] rounded-full transition-colors"
               >
@@ -3089,20 +3036,6 @@ export default function EstateManagementPage() {
                 />
               </div>
 
-              {/* Assigned To Field */}
-              <div>
-                <label className="block text-sm font-medium text-[#3d3d3d] mb-1.5">
-                  Assigned To
-                </label>
-                <Input
-                  type="text"
-                  value={newMilestoneAssignedTo}
-                  onChange={(e) => setNewMilestoneAssignedTo(e.target.value)}
-                  placeholder="e.g., John Smith"
-                  className="w-full h-9 text-sm bg-white border-[#d0d0d0] text-[#3d3d3d] placeholder:text-[#9b9b9b]"
-                />
-              </div>
-
               {/* Description Field */}
               <div>
                 <label className="block text-sm font-medium text-[#3d3d3d] mb-1.5">
@@ -3126,7 +3059,6 @@ export default function EstateManagementPage() {
                   setNewMilestoneName("")
                   setNewMilestoneDate("")
                   setNewMilestoneDescription("")
-                  setNewMilestoneAssignedTo("")
                 }}
                 className="bg-white border border-[#d0d0d0] text-[#3d3d3d] hover:bg-[#f8f7f5] text-sm h-9"
               >
