@@ -2,7 +2,7 @@
 
 import { useState } from "react"
 import { format } from "date-fns"
-import { Home, Briefcase, FileText, Trash2, Users, Building2, Copy, ChevronRight, Download, Plus, Menu, RefreshCw, User, CreditCard, DollarSign, Lock, Clipboard, UserCircle, BarChart3, FileCheck, UserPlus, CircleDollarSign, MousePointer, FolderOpen, Search, Edit, Folder, Grid, Upload, FolderPlus, MoreVertical, Trash, Edit2, X, File, CheckCircle, Image, FileImage, FolderInput, Eye, CalendarDays, Clock, CheckCircle2, AlertCircle } from "lucide-react"
+import { Home, Briefcase, FileText, Trash2, Users, Building2, Copy, ChevronRight, ArrowLeft, Download, Plus, Menu, RefreshCw, User, CreditCard, DollarSign, Lock, Clipboard, UserCircle, BarChart3, FileCheck, UserPlus, CircleDollarSign, MousePointer, FolderOpen, Search, Edit, Folder, Grid, Upload, FolderPlus, MoreVertical, Trash, Edit2, X, File, CheckCircle, Image, FileImage, FolderInput, Eye, CalendarDays, Clock, CheckCircle2, AlertCircle } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 
@@ -448,6 +448,10 @@ export default function EstateManagementPage() {
     },
   ]
 
+  const [showEditEstatePage, setShowEditEstatePage] = useState(false)
+  const [editForm, setEditForm] = useState<any>({})
+  const [estateData, setEstateData] = useState<Record<string, any>>({})
+
   // Folder management functions
   const handleRenameFolder = (oldName: string, newName: string) => {
     if (!newName.trim() || oldName === newName) {
@@ -655,6 +659,69 @@ export default function EstateManagementPage() {
     setShowAddMilestoneModal(false)
   }
 
+  const openEditModal = () => {
+    if (!selectedEstate) return
+    const saved = estateData[selectedEstate.id] || {}
+    setEditForm({
+      firstName: saved.firstName || "",
+      middleName: saved.middleName || "",
+      lastName: saved.lastName || "",
+      suffix: saved.suffix || "",
+      aliases: saved.aliases || [],
+      gender: saved.gender || "",
+      dateOfBirth: saved.dateOfBirth || "",
+      dateOfDeath: saved.dateOfDeath || "",
+      ssn: saved.ssn || "",
+      identifications: saved.identifications || [],
+      maritalStatus: saved.maritalStatus || "",
+      veteranStatus: saved.veteranStatus || "",
+      citizenship: saved.citizenship || "",
+      lastKnownCountry: saved.lastKnownCountry || "",
+      lastKnownStreet: saved.lastKnownStreet || "",
+      lastKnownCity: saved.lastKnownCity || "",
+      lastKnownState: saved.lastKnownState || "",
+      lastKnownCounty: saved.lastKnownCounty || "",
+      lastKnownZip: saved.lastKnownZip || "",
+      deathLocationType: saved.deathLocationType || "",
+      deathFacilityName: saved.deathFacilityName || "",
+      deathCountry: saved.deathCountry || "",
+      deathStreet: saved.deathStreet || "",
+      deathCity: saved.deathCity || "",
+      deathState: saved.deathState || "",
+      deathCounty: saved.deathCounty || "",
+      deathZip: saved.deathZip || "",
+      birthLocationType: saved.birthLocationType || "",
+      birthFacilityName: saved.birthFacilityName || "",
+      birthCountry: saved.birthCountry || "",
+      birthStreet: saved.birthStreet || "",
+      birthCity: saved.birthCity || "",
+      birthState: saved.birthState || "",
+      birthCounty: saved.birthCounty || "",
+      birthZip: saved.birthZip || "",
+      authorityType: saved.authorityType || "",
+      customerStatus: saved.customerStatus || "",
+      clickupId: saved.clickupId || "",
+      mtcDate: saved.mtcDate || "",
+      hasTrust: saved.hasTrust || false,
+      hasWill: saved.hasWill || false,
+      testAccount: saved.testAccount || false,
+      authorityStatuses: saved.authorityStatuses || [],
+      probateCaseNumber: saved.probateCaseNumber || "",
+      courtHearingDate: saved.courtHearingDate || "",
+      completeDate: saved.completeDate || "",
+      churnedDate: saved.churnedDate || "",
+      churnedReason: saved.churnedReason || "",
+      churnedReasonNotes: saved.churnedReasonNotes || "",
+    })
+    setShowEditEstatePage(true)
+  }
+
+  const handleSaveEstate = () => {
+    if (!selectedEstate) return
+    setEstateData(prev => ({ ...prev, [selectedEstate.id]: editForm }))
+    setShowEditEstatePage(false)
+  }
+
   // Deadline urgency helper
   const getDeadlineUrgency = (dueDate: string, completed: boolean) => {
     if (completed) return { label: "Completed", color: "bg-green-100 text-green-700" }
@@ -803,6 +870,507 @@ export default function EstateManagementPage() {
     ],
     "Beneficiary Documents": [],
     "Partner Documents": []
+  }
+
+  // Edit Estate Page
+  if (selectedEstate && showEditEstatePage) {
+    const iField = "w-full h-9 px-3 text-sm bg-white border border-[#d0d0d0] rounded-md text-[#3d3d3d] placeholder:text-[#c0c0c0] focus:outline-none focus:ring-2 focus:ring-[#3d3d3d]"
+    const iLabel = "block text-xs font-medium text-[#6b675f] mb-1"
+    const subHead = (title: string) => (
+      <div className="flex items-center gap-2 mb-4">
+        <span className="text-[#3d3d3d] font-bold">—</span>
+        <span className="text-xs font-semibold text-[#6b675f] uppercase tracking-wide">{title}</span>
+      </div>
+    )
+    const Toggle = ({ val, onChange }: { val: boolean, onChange: () => void }) => (
+      <button role="switch" aria-checked={val} onClick={onChange}
+        className={`relative inline-flex h-5 w-9 cursor-pointer items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-[#3d3d3d] focus:ring-offset-1 ${val ? 'bg-[#3d3d3d]' : 'bg-[#d0d0d0]'}`}>
+        <span className={`inline-block h-4 w-4 transform rounded-full bg-white shadow transition-transform ${val ? 'translate-x-[18px]' : 'translate-x-0.5'}`} />
+      </button>
+    )
+    return (
+      <div className="flex flex-col h-screen overflow-hidden bg-[#f5f4f2]">
+        {/* Nav header */}
+        <header className="bg-[#3d3d3d] text-white px-6 py-3 flex items-center gap-3 border-b border-[#2a2a2a] flex-shrink-0">
+          <button
+            onClick={() => setShowEditEstatePage(false)}
+            className="flex items-center gap-1.5 text-sm text-gray-300 hover:text-white transition-colors"
+          >
+            <ArrowLeft className="w-4 h-4" />
+            <span>Back to estate</span>
+          </button>
+          <span className="text-[#555]">·</span>
+          <span className="text-sm font-semibold">Edit Estate</span>
+        </header>
+
+        {/* Sticky estate summary */}
+        <div className="flex-shrink-0 bg-white border-b border-[#e5e5e5] px-6 py-3 z-10">
+          <div className="text-xs text-[#6b675f] mb-0.5">
+            Estate ID: <span className="font-mono">{selectedEstate.id}</span>
+            {selectedEstate.scanBoxId && <> &nbsp;·&nbsp; Scan Box: <span className="font-mono">{selectedEstate.scanBoxId}</span></>}
+          </div>
+          <div className="font-semibold text-[#3d3d3d]">Estate of: {selectedEstate.name}</div>
+        </div>
+
+        {/* Scrollable form */}
+        <div className="flex-1 overflow-auto">
+          <div className="max-w-4xl mx-auto py-6 px-6 space-y-5">
+
+            {/* ── Section 1: Deceased Biological Info ── */}
+            <div className="bg-white rounded-lg border border-[#e5e5e5] overflow-hidden">
+              <div className="border-l-4 border-[#3d3d3d] px-5 py-3 bg-[#fafafa] border-b border-[#e5e5e5]">
+                <h3 className="text-[11px] font-bold text-[#3d3d3d] uppercase tracking-widest">Deceased Biological Info</h3>
+              </div>
+              <div className="px-5 py-5 space-y-6">
+
+                {/* Name from Death Certificate */}
+                <div>
+                  {subHead("Name from Death Certificate")}
+                  <div className="grid grid-cols-4 gap-3">
+                    <div>
+                      <label className={iLabel}>First Name</label>
+                      <input value={editForm.firstName || ""} onChange={e => setEditForm((p: any) => ({ ...p, firstName: e.target.value }))} placeholder="First name" className={iField} />
+                    </div>
+                    <div>
+                      <label className={iLabel}>Middle Name</label>
+                      <input value={editForm.middleName || ""} onChange={e => setEditForm((p: any) => ({ ...p, middleName: e.target.value }))} placeholder="Middle name" className={iField} />
+                    </div>
+                    <div>
+                      <label className={iLabel}>Last Name</label>
+                      <input value={editForm.lastName || ""} onChange={e => setEditForm((p: any) => ({ ...p, lastName: e.target.value }))} placeholder="Last name" className={iField} />
+                    </div>
+                    <div>
+                      <label className={iLabel}>Suffix</label>
+                      <input value={editForm.suffix || ""} onChange={e => setEditForm((p: any) => ({ ...p, suffix: e.target.value }))} placeholder="Jr., Sr., III…" className={iField} />
+                    </div>
+                  </div>
+                </div>
+
+                {/* Identification */}
+                <div>
+                  <div className="flex items-center justify-between mb-4">
+                    <div className="flex items-center gap-2">
+                      <span className="text-[#3d3d3d] font-bold">—</span>
+                      <span className="text-xs font-semibold text-[#6b675f] uppercase tracking-wide">Identification</span>
+                    </div>
+                    <button onClick={() => setEditForm((p: any) => ({ ...p, identifications: [...(p.identifications || []), { type: "", number: "" }] }))}
+                      className="flex items-center gap-1 text-xs text-[#3d3d3d] border border-[#d0d0d0] rounded px-2 py-1 hover:bg-[#f8f7f5]">
+                      <Plus className="w-3 h-3" /> Add Identification
+                    </button>
+                  </div>
+                  {(editForm.identifications || []).length === 0 && <p className="text-xs text-[#9b9b9b]">No identifications added.</p>}
+                  <div className="space-y-2">
+                    {(editForm.identifications || []).map((id: any, i: number) => (
+                      <div key={i} className="flex gap-3 items-end bg-[#fafafa] border border-[#ebebeb] rounded-lg p-3">
+                        <div className="flex-1">
+                          <label className={iLabel}>Type</label>
+                          <select value={id.type} onChange={e => setEditForm((p: any) => ({ ...p, identifications: p.identifications.map((item: any, idx: number) => idx === i ? { ...item, type: e.target.value } : item) }))} className={iField}>
+                            <option value="">Select type…</option>
+                            <option value="Driver's License">Driver's License</option>
+                            <option value="State ID">State ID</option>
+                            <option value="Passport">Passport</option>
+                          </select>
+                        </div>
+                        <div className="flex-1">
+                          <label className={iLabel}>Number</label>
+                          <input value={id.number} onChange={e => setEditForm((p: any) => ({ ...p, identifications: p.identifications.map((item: any, idx: number) => idx === i ? { ...item, number: e.target.value } : item) }))} placeholder="ID number" className={iField} />
+                        </div>
+                        <button onClick={() => setEditForm((p: any) => ({ ...p, identifications: p.identifications.filter((_: any, idx: number) => idx !== i) }))} className="h-9 w-9 flex items-center justify-center text-red-400 hover:text-red-600 hover:bg-red-50 rounded flex-shrink-0">
+                          <X className="w-3.5 h-3.5" />
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Biological Details */}
+                <div>
+                  {subHead("Biological Details")}
+                  <div className="grid grid-cols-4 gap-3">
+                    <div>
+                      <label className={iLabel}>Gender</label>
+                      <select value={editForm.gender || ""} onChange={e => setEditForm((p: any) => ({ ...p, gender: e.target.value }))} className={iField}>
+                        <option value="">Select…</option>
+                        <option value="Male">Male</option>
+                        <option value="Female">Female</option>
+                        <option value="Non-binary">Non-binary</option>
+                        <option value="Unknown">Unknown</option>
+                      </select>
+                    </div>
+                    <div>
+                      <label className={iLabel}>Date of Birth</label>
+                      <input type="date" value={editForm.dateOfBirth || ""} onChange={e => setEditForm((p: any) => ({ ...p, dateOfBirth: e.target.value }))} className={iField} />
+                    </div>
+                    <div>
+                      <label className={iLabel}>Date of Death</label>
+                      <input type="date" value={editForm.dateOfDeath || ""} onChange={e => setEditForm((p: any) => ({ ...p, dateOfDeath: e.target.value }))} className={iField} />
+                    </div>
+                    <div>
+                      <label className={iLabel}>SSN</label>
+                      <input value={editForm.ssn || ""} onChange={e => setEditForm((p: any) => ({ ...p, ssn: e.target.value }))} placeholder="XXX-XX-XXXX" className={iField} />
+                    </div>
+                  </div>
+                  <div className="grid grid-cols-3 gap-3 mt-3">
+                    <div>
+                      <label className={iLabel}>Marital Status</label>
+                      <select value={editForm.maritalStatus || ""} onChange={e => setEditForm((p: any) => ({ ...p, maritalStatus: e.target.value }))} className={iField}>
+                        <option value="">Select…</option>
+                        <option value="Single">Single</option>
+                        <option value="Married">Married</option>
+                        <option value="Divorced">Divorced</option>
+                        <option value="Widowed">Widowed</option>
+                        <option value="Separated">Separated</option>
+                        <option value="Unknown">Unknown</option>
+                      </select>
+                    </div>
+                    <div className="flex items-end gap-3">
+                      <div className="flex-1">
+                        <label className={iLabel}>Citizenship</label>
+                        <input value={editForm.citizenship || ""} onChange={e => setEditForm((p: any) => ({ ...p, citizenship: e.target.value }))} placeholder="e.g. US Citizen" className={iField} />
+                      </div>
+                    </div>
+                    <div className="flex items-end pb-2">
+                      <div className="flex items-center gap-3">
+                        <Toggle val={editForm.veteranStatus === "Veteran"} onChange={() => setEditForm((p: any) => ({ ...p, veteranStatus: p.veteranStatus === "Veteran" ? "" : "Veteran" }))} />
+                        <span className="text-sm text-[#3d3d3d]">Veteran Status?</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Aliases */}
+                <div>
+                  <div className="flex items-center justify-between mb-4">
+                    <div className="flex items-center gap-2">
+                      <span className="text-[#3d3d3d] font-bold">—</span>
+                      <span className="text-xs font-semibold text-[#6b675f] uppercase tracking-wide">List of Aliases</span>
+                    </div>
+                    <button onClick={() => setEditForm((p: any) => ({ ...p, aliases: [...(p.aliases || []), { firstName: "", middleName: "", lastName: "", suffix: "", birthCertInfo: "" }] }))}
+                      className="flex items-center gap-1 text-xs text-[#3d3d3d] border border-[#d0d0d0] rounded px-2 py-1 hover:bg-[#f8f7f5]">
+                      <Plus className="w-3 h-3" /> Add Alias
+                    </button>
+                  </div>
+                  {(editForm.aliases || []).length === 0 && <p className="text-xs text-[#9b9b9b]">No aliases added.</p>}
+                  <div className="space-y-3">
+                    {(editForm.aliases || []).map((alias: any, i: number) => (
+                      <div key={i} className="bg-[#fafafa] border border-[#ebebeb] rounded-lg p-3">
+                        <div className="grid grid-cols-4 gap-2 mb-2">
+                          <div><label className={iLabel}>First</label><input value={alias.firstName} onChange={e => setEditForm((p: any) => ({ ...p, aliases: p.aliases.map((a: any, idx: number) => idx === i ? { ...a, firstName: e.target.value } : a) }))} placeholder="First" className="w-full h-8 px-2 text-xs bg-white border border-[#d0d0d0] rounded text-[#3d3d3d] focus:outline-none focus:ring-1 focus:ring-[#3d3d3d]" /></div>
+                          <div><label className={iLabel}>Middle</label><input value={alias.middleName} onChange={e => setEditForm((p: any) => ({ ...p, aliases: p.aliases.map((a: any, idx: number) => idx === i ? { ...a, middleName: e.target.value } : a) }))} placeholder="Middle" className="w-full h-8 px-2 text-xs bg-white border border-[#d0d0d0] rounded text-[#3d3d3d] focus:outline-none focus:ring-1 focus:ring-[#3d3d3d]" /></div>
+                          <div><label className={iLabel}>Last</label><input value={alias.lastName} onChange={e => setEditForm((p: any) => ({ ...p, aliases: p.aliases.map((a: any, idx: number) => idx === i ? { ...a, lastName: e.target.value } : a) }))} placeholder="Last" className="w-full h-8 px-2 text-xs bg-white border border-[#d0d0d0] rounded text-[#3d3d3d] focus:outline-none focus:ring-1 focus:ring-[#3d3d3d]" /></div>
+                          <div><label className={iLabel}>Suffix</label><input value={alias.suffix} onChange={e => setEditForm((p: any) => ({ ...p, aliases: p.aliases.map((a: any, idx: number) => idx === i ? { ...a, suffix: e.target.value } : a) }))} placeholder="Suffix" className="w-full h-8 px-2 text-xs bg-white border border-[#d0d0d0] rounded text-[#3d3d3d] focus:outline-none focus:ring-1 focus:ring-[#3d3d3d]" /></div>
+                        </div>
+                        <div className="flex items-end gap-2">
+                          <div className="flex-1"><label className={iLabel}>Birth Certificate Info</label><input value={alias.birthCertInfo} onChange={e => setEditForm((p: any) => ({ ...p, aliases: p.aliases.map((a: any, idx: number) => idx === i ? { ...a, birthCertInfo: e.target.value } : a) }))} placeholder="Certificate notes" className="w-full h-8 px-2 text-xs bg-white border border-[#d0d0d0] rounded text-[#3d3d3d] placeholder:text-[#c0c0c0] focus:outline-none focus:ring-1 focus:ring-[#3d3d3d]" /></div>
+                          <button onClick={() => setEditForm((p: any) => ({ ...p, aliases: p.aliases.filter((_: any, idx: number) => idx !== i) }))} className="h-8 w-8 flex items-center justify-center text-red-400 hover:text-red-600 hover:bg-red-50 rounded flex-shrink-0"><X className="w-3.5 h-3.5" /></button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+              </div>
+            </div>
+
+            {/* ── Section 2: Location Info ── */}
+            <div className="bg-white rounded-lg border border-[#e5e5e5] overflow-hidden">
+              <div className="border-l-4 border-[#3d3d3d] px-5 py-3 bg-[#fafafa] border-b border-[#e5e5e5]">
+                <h3 className="text-[11px] font-bold text-[#3d3d3d] uppercase tracking-widest">Location Info</h3>
+              </div>
+              <div className="px-5 py-5 space-y-6">
+
+                {/* Last Known Address */}
+                <div>
+                  {subHead("Last Known Address")}
+                  <div className="grid grid-cols-2 gap-3 mb-3">
+                    <div>
+                      <label className={iLabel}>Country</label>
+                      <input value={editForm.lastKnownCountry || ""} onChange={e => setEditForm((p: any) => ({ ...p, lastKnownCountry: e.target.value }))} placeholder="United States" className={iField} />
+                    </div>
+                    <div>
+                      <label className={iLabel}>Street Address</label>
+                      <input value={editForm.lastKnownStreet || ""} onChange={e => setEditForm((p: any) => ({ ...p, lastKnownStreet: e.target.value }))} placeholder="123 Main St" className={iField} />
+                    </div>
+                  </div>
+                  <div className="grid grid-cols-4 gap-3">
+                    <div>
+                      <label className={iLabel}>City</label>
+                      <input value={editForm.lastKnownCity || ""} onChange={e => setEditForm((p: any) => ({ ...p, lastKnownCity: e.target.value }))} placeholder="City" className={iField} />
+                    </div>
+                    <div>
+                      <label className={iLabel}>State</label>
+                      <input value={editForm.lastKnownState || ""} onChange={e => setEditForm((p: any) => ({ ...p, lastKnownState: e.target.value }))} placeholder="CA" className={iField} />
+                    </div>
+                    <div>
+                      <label className={iLabel}>County</label>
+                      <input value={editForm.lastKnownCounty || ""} onChange={e => setEditForm((p: any) => ({ ...p, lastKnownCounty: e.target.value }))} placeholder="County" className={iField} />
+                    </div>
+                    <div>
+                      <label className={iLabel}>ZIP Code</label>
+                      <input value={editForm.lastKnownZip || ""} onChange={e => setEditForm((p: any) => ({ ...p, lastKnownZip: e.target.value }))} placeholder="12345" className={iField} />
+                    </div>
+                  </div>
+                </div>
+
+                {/* Place of Death */}
+                <div>
+                  {subHead("Place of Death")}
+                  <div className="grid grid-cols-3 gap-3">
+                    <div>
+                      <label className={iLabel}>Location Type</label>
+                      <select value={editForm.deathLocationType || ""} onChange={e => setEditForm((p: any) => ({ ...p, deathLocationType: e.target.value }))} className={iField}>
+                        <option value="">Location Type</option>
+                        <option value="Hospital">Hospital</option>
+                        <option value="Home">Home</option>
+                        <option value="Hospice">Hospice</option>
+                        <option value="Nursing Home">Nursing Home</option>
+                        <option value="Other">Other</option>
+                      </select>
+                    </div>
+                    <div>
+                      <label className={iLabel}>Facility Name</label>
+                      <input value={editForm.deathFacilityName || ""} onChange={e => setEditForm((p: any) => ({ ...p, deathFacilityName: e.target.value }))} placeholder="Facility Name" className={iField} />
+                    </div>
+                    <div>
+                      <label className={iLabel}>Country</label>
+                      <input value={editForm.deathCountry || ""} onChange={e => setEditForm((p: any) => ({ ...p, deathCountry: e.target.value }))} placeholder="Country" className={iField} />
+                    </div>
+                    <div>
+                      <label className={iLabel}>Street</label>
+                      <input value={editForm.deathStreet || ""} onChange={e => setEditForm((p: any) => ({ ...p, deathStreet: e.target.value }))} placeholder="Street address" className={iField} />
+                    </div>
+                    <div>
+                      <label className={iLabel}>City</label>
+                      <input value={editForm.deathCity || ""} onChange={e => setEditForm((p: any) => ({ ...p, deathCity: e.target.value }))} placeholder="City" className={iField} />
+                    </div>
+                    <div>
+                      <label className={iLabel}>State</label>
+                      <input value={editForm.deathState || ""} onChange={e => setEditForm((p: any) => ({ ...p, deathState: e.target.value }))} placeholder="CA" className={iField} />
+                    </div>
+                    <div>
+                      <label className={iLabel}>County</label>
+                      <input value={editForm.deathCounty || ""} onChange={e => setEditForm((p: any) => ({ ...p, deathCounty: e.target.value }))} placeholder="County" className={iField} />
+                    </div>
+                    <div>
+                      <label className={iLabel}>ZIP</label>
+                      <input value={editForm.deathZip || ""} onChange={e => setEditForm((p: any) => ({ ...p, deathZip: e.target.value }))} placeholder="12345" className={iField} />
+                    </div>
+                  </div>
+                </div>
+
+                {/* Place of Birth */}
+                <div>
+                  {subHead("Place of Birth")}
+                  <div className="grid grid-cols-3 gap-3">
+                    <div>
+                      <label className={iLabel}>Location Type</label>
+                      <select value={editForm.birthLocationType || ""} onChange={e => setEditForm((p: any) => ({ ...p, birthLocationType: e.target.value }))} className={iField}>
+                        <option value="">Location Type</option>
+                        <option value="Hospital">Hospital</option>
+                        <option value="Home">Home</option>
+                        <option value="Other">Other</option>
+                      </select>
+                    </div>
+                    <div>
+                      <label className={iLabel}>Facility Name</label>
+                      <input value={editForm.birthFacilityName || ""} onChange={e => setEditForm((p: any) => ({ ...p, birthFacilityName: e.target.value }))} placeholder="Facility Name" className={iField} />
+                    </div>
+                    <div>
+                      <label className={iLabel}>Country</label>
+                      <input value={editForm.birthCountry || ""} onChange={e => setEditForm((p: any) => ({ ...p, birthCountry: e.target.value }))} placeholder="Country" className={iField} />
+                    </div>
+                    <div>
+                      <label className={iLabel}>Street</label>
+                      <input value={editForm.birthStreet || ""} onChange={e => setEditForm((p: any) => ({ ...p, birthStreet: e.target.value }))} placeholder="Street address" className={iField} />
+                    </div>
+                    <div>
+                      <label className={iLabel}>City</label>
+                      <input value={editForm.birthCity || ""} onChange={e => setEditForm((p: any) => ({ ...p, birthCity: e.target.value }))} placeholder="City" className={iField} />
+                    </div>
+                    <div>
+                      <label className={iLabel}>State</label>
+                      <input value={editForm.birthState || ""} onChange={e => setEditForm((p: any) => ({ ...p, birthState: e.target.value }))} placeholder="CA" className={iField} />
+                    </div>
+                    <div>
+                      <label className={iLabel}>County</label>
+                      <input value={editForm.birthCounty || ""} onChange={e => setEditForm((p: any) => ({ ...p, birthCounty: e.target.value }))} placeholder="County" className={iField} />
+                    </div>
+                    <div>
+                      <label className={iLabel}>ZIP</label>
+                      <input value={editForm.birthZip || ""} onChange={e => setEditForm((p: any) => ({ ...p, birthZip: e.target.value }))} placeholder="12345" className={iField} />
+                    </div>
+                  </div>
+                </div>
+
+              </div>
+            </div>
+
+            {/* ── Section 3: Estate Info ── */}
+            <div className="bg-white rounded-lg border border-[#e5e5e5] overflow-hidden">
+              <div className="border-l-4 border-[#3d3d3d] px-5 py-3 bg-[#fafafa] border-b border-[#e5e5e5]">
+                <h3 className="text-[11px] font-bold text-[#3d3d3d] uppercase tracking-widest">Estate Info</h3>
+              </div>
+              <div className="px-5 py-5 space-y-6">
+
+              {/* Main Details */}
+              <div>
+                {subHead("Estate Details")}
+                <div className="grid grid-cols-4 gap-3">
+                  <div>
+                    <label className={iLabel}>Authority Type</label>
+                    <select value={editForm.authorityType || ""} onChange={e => setEditForm((p: any) => ({ ...p, authorityType: e.target.value }))} className="w-full h-9 px-3 text-sm bg-white border border-[#d0d0d0] rounded-md text-[#3d3d3d] focus:outline-none focus:ring-2 focus:ring-[#3d3d3d]">
+                      <option value="">Select…</option>
+                      <option value="Probate (Dependent)">Probate (Dependent)</option>
+                      <option value="Probate (Independent)">Probate (Independent)</option>
+                      <option value="Small Estate Affidavit">Small Estate Affidavit</option>
+                      <option value="Trust Administration">Trust Administration</option>
+                      <option value="Joint Tenancy">Joint Tenancy</option>
+                      <option value="Beneficiary Designation">Beneficiary Designation</option>
+                      <option value="Other">Other</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label className={iLabel}>Customer Status</label>
+                    <select value={editForm.customerStatus || ""} onChange={e => setEditForm((p: any) => ({ ...p, customerStatus: e.target.value }))} className={iField}>
+                      <option value="">Select…</option>
+                      <option value="Active">Active</option>
+                      <option value="Completed">Completed</option>
+                      <option value="Churned">Churned</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label className={iLabel}>ClickUp ID</label>
+                    <input value={editForm.clickupId || ""} onChange={e => setEditForm((p: any) => ({ ...p, clickupId: e.target.value }))} placeholder="ClickUp task ID" className={iField} />
+                  </div>
+                  <div>
+                    <label className={iLabel}>MTC Date</label>
+                    <input type="date" value={editForm.mtcDate || ""} onChange={e => setEditForm((p: any) => ({ ...p, mtcDate: e.target.value }))} className={iField} />
+                  </div>
+                </div>
+                <div className="flex items-center gap-8 mt-4">
+                  <div className="flex items-center gap-2.5">
+                    <Toggle val={editForm.hasTrust || false} onChange={() => setEditForm((p: any) => ({ ...p, hasTrust: !p.hasTrust }))} />
+                    <span className="text-sm text-[#3d3d3d]">Has Trust?</span>
+                  </div>
+                  <div className="flex items-center gap-2.5">
+                    <Toggle val={editForm.hasWill || false} onChange={() => setEditForm((p: any) => ({ ...p, hasWill: !p.hasWill }))} />
+                    <span className="text-sm text-[#3d3d3d]">Has Will?</span>
+                  </div>
+                  <div className="flex items-center gap-2.5">
+                    <Toggle val={editForm.testAccount || false} onChange={() => setEditForm((p: any) => ({ ...p, testAccount: !p.testAccount }))} />
+                    <span className="text-sm text-[#3d3d3d]">Test Account?</span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Authority Statuses */}
+              <div>
+                <div className="flex items-center justify-between mb-4">
+                  <div className="flex items-center gap-2">
+                    <span className="text-[#3d3d3d] font-bold">—</span>
+                    <span className="text-xs font-semibold text-[#6b675f] uppercase tracking-wide">Authority Statuses</span>
+                  </div>
+                  <button onClick={() => setEditForm((p: any) => ({ ...p, authorityStatuses: [...(p.authorityStatuses || []), { authorityStatus: "", einTaxId: "", obtainedAt: "", boxFileId: "" }] }))}
+                    className="flex items-center gap-1 text-xs text-[#3d3d3d] border border-[#d0d0d0] rounded px-2 py-1 hover:bg-[#f8f7f5]">
+                    <Plus className="w-3 h-3" /> Add Status
+                  </button>
+                </div>
+                {(editForm.authorityStatuses || []).length === 0 && <p className="text-xs text-[#9b9b9b]">No authority statuses found for this estate.</p>}
+                <div className="space-y-3">
+                  {(editForm.authorityStatuses || []).map((as: any, i: number) => (
+                    <div key={i} className="bg-[#fafafa] border border-[#ebebeb] rounded-lg p-3">
+                      <div className="grid grid-cols-2 gap-2 mb-2">
+                        <div>
+                          <label className="block text-xs font-medium text-[#6b675f] mb-1">Authority Status</label>
+                          <input value={as.authorityStatus} onChange={e => setEditForm((p: any) => ({ ...p, authorityStatuses: p.authorityStatuses.map((item: any, idx: number) => idx === i ? { ...item, authorityStatus: e.target.value } : item) }))} placeholder="Status" className="w-full h-8 px-2 text-xs bg-white border border-[#d0d0d0] rounded text-[#3d3d3d] placeholder:text-[#c0c0c0] focus:outline-none focus:ring-1 focus:ring-[#3d3d3d]" />
+                        </div>
+                        <div>
+                          <label className="block text-xs font-medium text-[#6b675f] mb-1">EIN / Tax ID</label>
+                          <input value={as.einTaxId} onChange={e => setEditForm((p: any) => ({ ...p, authorityStatuses: p.authorityStatuses.map((item: any, idx: number) => idx === i ? { ...item, einTaxId: e.target.value } : item) }))} placeholder="XX-XXXXXXX" className="w-full h-8 px-2 text-xs bg-white border border-[#d0d0d0] rounded text-[#3d3d3d] placeholder:text-[#c0c0c0] focus:outline-none focus:ring-1 focus:ring-[#3d3d3d]" />
+                        </div>
+                        <div>
+                          <label className="block text-xs font-medium text-[#6b675f] mb-1">Obtained At</label>
+                          <input type="date" value={as.obtainedAt} onChange={e => setEditForm((p: any) => ({ ...p, authorityStatuses: p.authorityStatuses.map((item: any, idx: number) => idx === i ? { ...item, obtainedAt: e.target.value } : item) }))} className="w-full h-8 px-2 text-xs bg-white border border-[#d0d0d0] rounded text-[#3d3d3d] focus:outline-none focus:ring-1 focus:ring-[#3d3d3d]" />
+                        </div>
+                        <div>
+                          <label className="block text-xs font-medium text-[#6b675f] mb-1">Box File ID</label>
+                          <input value={as.boxFileId} onChange={e => setEditForm((p: any) => ({ ...p, authorityStatuses: p.authorityStatuses.map((item: any, idx: number) => idx === i ? { ...item, boxFileId: e.target.value } : item) }))} placeholder="Box file ID" className="w-full h-8 px-2 text-xs bg-white border border-[#d0d0d0] rounded text-[#3d3d3d] placeholder:text-[#c0c0c0] focus:outline-none focus:ring-1 focus:ring-[#3d3d3d]" />
+                        </div>
+                      </div>
+                      <div className="flex justify-end">
+                        <button onClick={() => setEditForm((p: any) => ({ ...p, authorityStatuses: p.authorityStatuses.filter((_: any, idx: number) => idx !== i) }))} className="text-xs text-red-400 hover:text-red-600 flex items-center gap-1">
+                          <X className="w-3 h-3" /> Remove
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* Probate Details — conditional on authority type */}
+              {(editForm.authorityType || "").toLowerCase().includes("probate") && (
+                <div>
+                  <p className="text-sm font-medium text-[#3d3d3d] mb-3">Probate Details</p>
+                  <div className="grid grid-cols-2 gap-3">
+                    <div>
+                      <label className="block text-xs font-medium text-[#6b675f] mb-1">Probate Case Number</label>
+                      <input value={editForm.probateCaseNumber || ""} onChange={e => setEditForm((p: any) => ({ ...p, probateCaseNumber: e.target.value }))} placeholder="Case number" className="w-full h-9 px-3 text-sm bg-white border border-[#d0d0d0] rounded-md text-[#3d3d3d] placeholder:text-[#c0c0c0] focus:outline-none focus:ring-2 focus:ring-[#3d3d3d]" />
+                    </div>
+                    <div>
+                      <label className="block text-xs font-medium text-[#6b675f] mb-1">Court Hearing Date</label>
+                      <input type="date" value={editForm.courtHearingDate || ""} onChange={e => setEditForm((p: any) => ({ ...p, courtHearingDate: e.target.value }))} className="w-full h-9 px-3 text-sm bg-white border border-[#d0d0d0] rounded-md text-[#3d3d3d] focus:outline-none focus:ring-2 focus:ring-[#3d3d3d]" />
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* Estate Closure — conditional on customer status */}
+              {editForm.customerStatus === "Completed" && (
+                <div>
+                  <p className="text-sm font-medium text-[#3d3d3d] mb-3">Estate Closure</p>
+                  <div className="max-w-xs">
+                    <label className="block text-xs font-medium text-[#6b675f] mb-1">Complete Date</label>
+                    <input type="date" value={editForm.completeDate || ""} onChange={e => setEditForm((p: any) => ({ ...p, completeDate: e.target.value }))} className="w-full h-9 px-3 text-sm bg-white border border-[#d0d0d0] rounded-md text-[#3d3d3d] focus:outline-none focus:ring-2 focus:ring-[#3d3d3d]" />
+                  </div>
+                </div>
+              )}
+              {editForm.customerStatus === "Churned" && (
+                <div>
+                  <p className="text-sm font-medium text-[#3d3d3d] mb-3">Estate Closure</p>
+                  <div className="grid grid-cols-2 gap-3">
+                    <div>
+                      <label className="block text-xs font-medium text-[#6b675f] mb-1">Churned Date</label>
+                      <input type="date" value={editForm.churnedDate || ""} onChange={e => setEditForm((p: any) => ({ ...p, churnedDate: e.target.value }))} className="w-full h-9 px-3 text-sm bg-white border border-[#d0d0d0] rounded-md text-[#3d3d3d] focus:outline-none focus:ring-2 focus:ring-[#3d3d3d]" />
+                    </div>
+                    <div>
+                      <label className="block text-xs font-medium text-[#6b675f] mb-1">Churned Reason</label>
+                      <input value={editForm.churnedReason || ""} onChange={e => setEditForm((p: any) => ({ ...p, churnedReason: e.target.value }))} placeholder="Reason for churning" className="w-full h-9 px-3 text-sm bg-white border border-[#d0d0d0] rounded-md text-[#3d3d3d] placeholder:text-[#c0c0c0] focus:outline-none focus:ring-2 focus:ring-[#3d3d3d]" />
+                    </div>
+                    <div className="col-span-2">
+                      <label className="block text-xs font-medium text-[#6b675f] mb-1">Churned Reason Notes</label>
+                      <textarea value={editForm.churnedReasonNotes || ""} onChange={e => setEditForm((p: any) => ({ ...p, churnedReasonNotes: e.target.value }))} placeholder="Additional notes…" rows={3} className="w-full px-3 py-2 text-sm bg-white border border-[#d0d0d0] rounded-md text-[#3d3d3d] placeholder:text-[#c0c0c0] focus:outline-none focus:ring-2 focus:ring-[#3d3d3d] resize-none" />
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              </div>
+            </div>
+
+          </div>
+        </div>
+
+        {/* Sticky footer */}
+        <div className="flex-shrink-0 bg-white border-t border-[#e5e5e5] px-6 py-4 flex items-center justify-end gap-3">
+          <button onClick={() => setShowEditEstatePage(false)} className="px-4 py-2 text-sm text-[#6b675f] border border-[#d0d0d0] rounded-md hover:bg-[#f8f7f5] transition-colors">
+            Cancel
+          </button>
+          <Button onClick={handleSaveEstate} className="bg-[#3d3d3d] text-white hover:bg-[#2d2d2d] text-sm px-5">
+            Save
+          </Button>
+        </div>
+      </div>
+    )
   }
 
   // Estate Detail View
@@ -1911,46 +2479,115 @@ export default function EstateManagementPage() {
               // Original Assets/Other Views
               <>
                 {/* Estate Info Header */}
-                <div className="bg-white border-b border-[#e5e5e5] px-6 py-3">
-                  <div className="flex items-start justify-between">
-                    <div>
-                      <div className="flex items-center gap-2 mb-1.5">
-                        <span className="text-xs text-[#6b675f]">ID: {selectedEstate.id}</span>
-                        <button className="text-[#6b675f] hover:text-[#3d3d3d]">
-                          <Copy className="w-3.5 h-3.5" />
-                        </button>
-                        <button className="text-[#6b675f] hover:text-[#3d3d3d]">
-                          <Edit className="w-3.5 h-3.5" />
-                        </button>
-                      </div>
-                      <h2 className="text-lg font-semibold text-[#3d3d3d] mb-1.5">Estate of: {selectedEstate.name}</h2>
-                      <div className="flex items-center gap-4 text-sm">
-                        {selectedEstate.scanBoxId && (
-                          <div className="flex items-center gap-2">
-                            <span className="text-[#6b675f]">Scan Box ID:</span>
-                            <span className="text-[#3d3d3d]">{selectedEstate.scanBoxId}</span>
-                            <button className="text-[#6b675f] hover:text-[#3d3d3d]">
-                              <Copy className="w-3.5 h-3.5" />
-                            </button>
-                          </div>
-                        )}
-                        {selectedEstate.email && (
-                          <div className="flex items-center gap-2">
-                            <span className="text-[#3d3d3d]">{selectedEstate.email}</span>
-                            <button className="text-[#6b675f] hover:text-[#3d3d3d]">
-                              <Copy className="w-3.5 h-3.5" />
-                            </button>
-                          </div>
-                        )}
-                      </div>
+                <div className="bg-white border-b border-[#e5e5e5] px-6 py-4">
+                  {/* Top row: ID, copy, edit, badges + Create Contact button */}
+                  <div className="flex items-start justify-between mb-2">
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <span className="text-xs text-[#6b675f]">ID: {selectedEstate.id}</span>
+                      <button className="text-[#6b675f] hover:text-[#3d3d3d]">
+                        <Copy className="w-3.5 h-3.5" />
+                      </button>
+                      <button onClick={openEditModal} className="flex items-center gap-1 text-xs text-[#6b675f] hover:text-[#3d3d3d] border border-[#d0d0d0] hover:border-[#3d3d3d] rounded px-2 py-1 transition-colors" title="Edit estate">
+                        <Edit className="w-3 h-3" />
+                        <span>Edit</span>
+                      </button>
+                      {estateData[selectedEstate.id]?.testAccount && (
+                        <span className="text-[10px] bg-amber-100 text-amber-700 border border-amber-200 px-1.5 py-0.5 rounded font-semibold tracking-wide">TEST</span>
+                      )}
                     </div>
-                    <div className="text-right">
-                      <Button className="bg-white border border-[#d0d0d0] text-[#3d3d3d] hover:bg-[#f8f7f5] text-sm h-9">
-                        <Plus className="w-4 h-4 mr-1.5" />
-                        Create New Contact
-                      </Button>
-                      <p className="text-xs text-[#6b675f] mt-1.5">This estate doesn't have any contacts yet.</p>
-                    </div>
+                    <Button className="bg-white border border-[#d0d0d0] text-[#3d3d3d] hover:bg-[#f8f7f5] text-sm h-9 flex-shrink-0">
+                      <Plus className="w-4 h-4 mr-1.5" />
+                      Create New Contact
+                    </Button>
+                  </div>
+
+                  {/* Estate name */}
+                  <h2 className="text-lg font-semibold text-[#3d3d3d] mb-3">
+                    Estate of: {[estateData[selectedEstate.id]?.firstName, estateData[selectedEstate.id]?.middleName, estateData[selectedEstate.id]?.lastName, estateData[selectedEstate.id]?.suffix].filter(Boolean).join(" ") || selectedEstate.name}
+                  </h2>
+
+                  {/* Info fields */}
+                  <div className="flex flex-wrap gap-x-5 gap-y-1.5 text-xs">
+                    {selectedEstate.email && (
+                      <div className="flex items-center gap-1.5">
+                        <span className="text-[#6b675f]">Email:</span>
+                        <span className="text-[#3d3d3d]">{selectedEstate.email}</span>
+                        <button className="text-[#6b675f] hover:text-[#3d3d3d]"><Copy className="w-3 h-3" /></button>
+                      </div>
+                    )}
+                    {selectedEstate.scanBoxId && (
+                      <div className="flex items-center gap-1.5">
+                        <span className="text-[#6b675f]">Scan Box:</span>
+                        <span className="text-[#3d3d3d]">{selectedEstate.scanBoxId}</span>
+                        <button className="text-[#6b675f] hover:text-[#3d3d3d]"><Copy className="w-3 h-3" /></button>
+                      </div>
+                    )}
+                    {estateData[selectedEstate.id]?.gender && (
+                      <div className="flex items-center gap-1.5">
+                        <span className="text-[#6b675f]">Gender:</span>
+                        <span className="text-[#3d3d3d]">{estateData[selectedEstate.id].gender}</span>
+                      </div>
+                    )}
+                    {estateData[selectedEstate.id]?.dateOfBirth && (
+                      <div className="flex items-center gap-1.5">
+                        <span className="text-[#6b675f]">DOB:</span>
+                        <span className="text-[#3d3d3d]">{estateData[selectedEstate.id].dateOfBirth}</span>
+                      </div>
+                    )}
+                    {estateData[selectedEstate.id]?.dateOfDeath && (
+                      <div className="flex items-center gap-1.5">
+                        <span className="text-[#6b675f]">DOD:</span>
+                        <span className="text-[#3d3d3d]">{estateData[selectedEstate.id].dateOfDeath}</span>
+                      </div>
+                    )}
+                    {estateData[selectedEstate.id]?.ssn && (
+                      <div className="flex items-center gap-1.5">
+                        <span className="text-[#6b675f]">SSN:</span>
+                        <span className="text-[#3d3d3d]">***-**-{estateData[selectedEstate.id].ssn.slice(-4)}</span>
+                      </div>
+                    )}
+                    {estateData[selectedEstate.id]?.customerStatus && (
+                      <div className="flex items-center gap-1.5">
+                        <span className="text-[#6b675f]">Status:</span>
+                        <span className="text-[#3d3d3d]">{estateData[selectedEstate.id].customerStatus}</span>
+                      </div>
+                    )}
+                    {estateData[selectedEstate.id]?.authorityType && (
+                      <div className="flex items-center gap-1.5">
+                        <span className="text-[#6b675f]">Authority:</span>
+                        <span className="text-[#3d3d3d]">{estateData[selectedEstate.id].authorityType}</span>
+                      </div>
+                    )}
+                    {(estateData[selectedEstate.id]?.hasTrust || estateData[selectedEstate.id]?.hasWill) && (
+                      <div className="flex items-center gap-1.5">
+                        {estateData[selectedEstate.id]?.hasTrust && <span className="bg-blue-50 text-blue-700 border border-blue-200 px-1.5 py-0.5 rounded">Trust</span>}
+                        {estateData[selectedEstate.id]?.hasWill && <span className="bg-violet-50 text-violet-700 border border-violet-200 px-1.5 py-0.5 rounded">Will</span>}
+                      </div>
+                    )}
+                    {estateData[selectedEstate.id]?.clickupId && (
+                      <div className="flex items-center gap-1.5">
+                        <span className="text-[#6b675f]">ClickUp:</span>
+                        <span className="text-[#3d3d3d]">{estateData[selectedEstate.id].clickupId}</span>
+                      </div>
+                    )}
+                    {estateData[selectedEstate.id]?.probateCaseNumber && (
+                      <div className="flex items-center gap-1.5">
+                        <span className="text-[#6b675f]">Case #:</span>
+                        <span className="text-[#3d3d3d]">{estateData[selectedEstate.id].probateCaseNumber}</span>
+                      </div>
+                    )}
+                    {estateData[selectedEstate.id]?.courtHearingDate && (
+                      <div className="flex items-center gap-1.5">
+                        <span className="text-[#6b675f]">Court Hearing:</span>
+                        <span className="text-[#3d3d3d]">{estateData[selectedEstate.id].courtHearingDate}</span>
+                      </div>
+                    )}
+                    {(estateData[selectedEstate.id]?.lastKnownStreet || estateData[selectedEstate.id]?.lastKnownCity) && (
+                      <div className="flex items-center gap-1.5 w-full">
+                        <span className="text-[#6b675f]">Address:</span>
+                        <span className="text-[#3d3d3d]">{[estateData[selectedEstate.id]?.lastKnownStreet, estateData[selectedEstate.id]?.lastKnownCity, estateData[selectedEstate.id]?.lastKnownState, estateData[selectedEstate.id]?.lastKnownZip].filter(Boolean).join(", ")}</span>
+                      </div>
+                    )}
                   </div>
                 </div>
 
