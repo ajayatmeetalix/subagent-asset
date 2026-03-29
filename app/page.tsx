@@ -451,6 +451,21 @@ export default function EstateManagementPage() {
   const [showEditEstatePage, setShowEditEstatePage] = useState(false)
   const [editForm, setEditForm] = useState<any>({})
   const [estateData, setEstateData] = useState<Record<string, any>>({})
+  const [legalEditSection, setLegalEditSection] = useState<string | null>(null)
+  const [legalEditForm, setLegalEditForm] = useState<any>({})
+  // Sample data so prototypes look populated
+  const [legalInfo, setLegalInfo] = useState<Record<string, any>>({
+    "862831cb-8e8d-44b5-bde5-03583031d3cb": {
+      authorityType: "Probate (Independent)",
+      caseNumber: "24-PR-00412",
+      jurisdiction: "Essex County Surrogate's Court",
+      courtDate: "2025-04-15",
+      courtStreet: "465 Dr. Martin Luther King Jr. Blvd",
+      courtCity: "Newark",
+      courtState: "NJ",
+      courtZip: "07102",
+    }
+  })
 
   // Folder management functions
   const handleRenameFolder = (oldName: string, newName: string) => {
@@ -706,8 +721,6 @@ export default function EstateManagementPage() {
       hasWill: saved.hasWill || false,
       testAccount: saved.testAccount || false,
       authorityStatuses: saved.authorityStatuses || [],
-      probateCaseNumber: saved.probateCaseNumber || "",
-      courtHearingDate: saved.courtHearingDate || "",
       completeDate: saved.completeDate || "",
       churnedDate: saved.churnedDate || "",
       churnedReason: saved.churnedReason || "",
@@ -1307,23 +1320,6 @@ export default function EstateManagementPage() {
                 </div>
               </div>
 
-              {/* Probate Details — conditional on authority type */}
-              {(editForm.authorityType || "").toLowerCase().includes("probate") && (
-                <div>
-                  <p className="text-sm font-medium text-[#3d3d3d] mb-3">Probate Details</p>
-                  <div className="grid grid-cols-2 gap-3">
-                    <div>
-                      <label className="block text-xs font-medium text-[#6b675f] mb-1">Probate Case Number</label>
-                      <input value={editForm.probateCaseNumber || ""} onChange={e => setEditForm((p: any) => ({ ...p, probateCaseNumber: e.target.value }))} placeholder="Case number" className="w-full h-9 px-3 text-sm bg-white border border-[#d0d0d0] rounded-md text-[#3d3d3d] placeholder:text-[#c0c0c0] focus:outline-none focus:ring-2 focus:ring-[#3d3d3d]" />
-                    </div>
-                    <div>
-                      <label className="block text-xs font-medium text-[#6b675f] mb-1">Court Hearing Date</label>
-                      <input type="date" value={editForm.courtHearingDate || ""} onChange={e => setEditForm((p: any) => ({ ...p, courtHearingDate: e.target.value }))} className="w-full h-9 px-3 text-sm bg-white border border-[#d0d0d0] rounded-md text-[#3d3d3d] focus:outline-none focus:ring-2 focus:ring-[#3d3d3d]" />
-                    </div>
-                  </div>
-                </div>
-              )}
-
               {/* Estate Closure — conditional on customer status */}
               {editForm.customerStatus === "Completed" && (
                 <div>
@@ -1373,6 +1369,7 @@ export default function EstateManagementPage() {
     )
   }
 
+
   // Estate Detail View
   if (selectedEstate) {
     return (
@@ -1418,6 +1415,15 @@ export default function EstateManagementPage() {
               >
                 <Home className="w-[18px] h-[18px] flex-shrink-0" />
                 <span className="text-[13px] whitespace-nowrap">Home</span>
+              </button>
+              <button
+                onClick={() => { setActiveNav("legal"); setSidebarOpen(false); }}
+                className={`w-full flex items-center gap-2.5 px-3 py-2.5 rounded-md transition-colors ${activeNav === "legal" ? "bg-[#ececec] text-[#3d3d3d]" : "text-[#6b675f] hover:bg-[#ececec] hover:text-[#3d3d3d]"}`}
+                title="Legal"
+              >
+                <FileCheck className="w-[18px] h-[18px] flex-shrink-0" />
+                <span className="text-[13px] whitespace-nowrap">Legal</span>
+                <span className="ml-auto text-[9px] font-semibold text-amber-600 bg-amber-100 border border-amber-200 rounded px-1 py-0.5 leading-tight">PROTO</span>
               </button>
               <button
                 onClick={() => { setActiveNav("jobs-board"); setSidebarOpen(false); }}
@@ -2475,6 +2481,113 @@ export default function EstateManagementPage() {
                   </div>
                 </div>
               </>
+            ) : activeNav === "legal" ? (
+              // Legal View
+              <div className="flex-1 overflow-auto bg-[#f5f4f2]">
+                {(() => {
+                  const legal = legalInfo[selectedEstate.id] || {}
+                  const formatDate = (d: string) => d ? new Date(d + "T12:00:00").toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" }) : "—"
+                  const lField = (field: string, placeholder = "", type = "text") => (
+                    <input
+                      type={type}
+                      value={legalEditForm[field] || ""}
+                      onChange={e => setLegalEditForm((p: any) => ({ ...p, [field]: e.target.value }))}
+                      placeholder={placeholder}
+                      className="w-full h-9 px-3 text-sm bg-white border border-[#d0d0d0] rounded-md text-[#3d3d3d] placeholder:text-[#c0c0c0] focus:outline-none focus:ring-2 focus:ring-[#3d3d3d]"
+                    />
+                  )
+                  const lLabel = (text: string) => <label className="block text-xs font-medium text-[#6b675f] mb-1">{text}</label>
+                  const saveSection = () => {
+                    setLegalInfo((prev: any) => ({ ...prev, [selectedEstate.id]: { ...(prev[selectedEstate.id] || {}), ...legalEditForm } }))
+                    setLegalEditSection(null)
+                  }
+                  const startEdit = (section: string) => { setLegalEditForm({ ...legal }); setLegalEditSection(section) }
+                  const CardEditBtn = ({ section }: { section: string }) => (
+                    <button onClick={() => startEdit(section)} className="flex items-center gap-1 text-xs text-[#6b675f] hover:text-[#3d3d3d] transition-colors">
+                      <Edit className="w-3 h-3" /><span>Edit</span>
+                    </button>
+                  )
+                  const CardActions = () => (
+                    <div className="flex items-center justify-end gap-2 px-5 py-3 border-t border-[#f0f0f0]">
+                      <button onClick={() => setLegalEditSection(null)} className="h-8 px-3 text-xs font-medium text-[#6b675f] hover:text-[#3d3d3d] border border-[#d0d0d0] hover:border-[#3d3d3d] rounded-md transition-colors">Cancel</button>
+                      <button onClick={saveSection} className="h-8 px-4 text-xs font-medium text-white bg-[#3d3d3d] hover:bg-[#2d2d2d] rounded-md transition-colors">Save</button>
+                    </div>
+                  )
+                  return (
+                    <div className="max-w-4xl mx-auto py-6 px-6 space-y-5">
+                      {/* Legal Authority */}
+                      <div className="bg-white rounded-lg border border-[#e5e5e5] overflow-hidden">
+                        <div className="border-l-4 border-[#3d3d3d] px-5 py-3 bg-[#fafafa] border-b border-[#e5e5e5] flex items-center justify-between">
+                          <h3 className="text-[11px] font-bold text-[#3d3d3d] uppercase tracking-widest">Legal Authority</h3>
+                          {legalEditSection !== "authority" && <CardEditBtn section="authority" />}
+                        </div>
+                        {legalEditSection === "authority" ? (
+                          <>
+                            <div className="px-5 py-5 grid grid-cols-3 gap-5">
+                              <div>{lLabel("Authority Type")}{lField("authorityType", "e.g. Probate (Independent)")}</div>
+                              <div>{lLabel("Case #")}{lField("caseNumber", "e.g. 24-PR-00412")}</div>
+                              <div>{lLabel("Jurisdiction")}{lField("jurisdiction", "e.g. Essex County Surrogate's Court")}</div>
+                            </div>
+                            <CardActions />
+                          </>
+                        ) : (
+                          <div className="px-5 py-5 grid grid-cols-3 gap-8">
+                            <div>
+                              <p className="text-xs text-[#6b675f] mb-1.5">Authority Type</p>
+                              <p className="text-sm font-semibold text-[#3d3d3d]">{legal.authorityType || "—"}</p>
+                            </div>
+                            <div>
+                              <p className="text-xs text-[#6b675f] mb-1.5">Case #</p>
+                              <p className="text-sm font-semibold text-[#3d3d3d] font-mono">{legal.caseNumber || "—"}</p>
+                            </div>
+                            <div>
+                              <p className="text-xs text-[#6b675f] mb-1.5">Probate Jurisdiction</p>
+                              <p className="text-sm font-semibold text-[#3d3d3d]">{legal.jurisdiction || "—"}</p>
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                      {/* Court Details */}
+                      <div className="bg-white rounded-lg border border-[#e5e5e5] overflow-hidden">
+                        <div className="border-l-4 border-[#3d3d3d] px-5 py-3 bg-[#fafafa] border-b border-[#e5e5e5] flex items-center justify-between">
+                          <h3 className="text-[11px] font-bold text-[#3d3d3d] uppercase tracking-widest">Court Details</h3>
+                          {legalEditSection !== "court" && <CardEditBtn section="court" />}
+                        </div>
+                        {legalEditSection === "court" ? (
+                          <>
+                            <div className="px-5 py-5 space-y-4">
+                              <div className="max-w-xs">{lLabel("Court Date")}{lField("courtDate", "", "date")}</div>
+                              <div>{lLabel("Street Address")}{lField("courtStreet", "Street address")}</div>
+                              <div className="grid grid-cols-3 gap-3">
+                                <div className="col-span-1">{lLabel("City")}{lField("courtCity", "City")}</div>
+                                <div>{lLabel("State")}{lField("courtState", "State")}</div>
+                                <div>{lLabel("ZIP")}{lField("courtZip", "ZIP")}</div>
+                              </div>
+                            </div>
+                            <CardActions />
+                          </>
+                        ) : (
+                          <div className="px-5 py-5 grid grid-cols-2 gap-8">
+                            <div>
+                              <p className="text-xs text-[#6b675f] mb-1.5">Court Date</p>
+                              <p className="text-sm font-semibold text-[#3d3d3d]">{formatDate(legal.courtDate)}</p>
+                            </div>
+                            <div>
+                              <p className="text-xs text-[#6b675f] mb-1.5">Court Address</p>
+                              {legal.courtStreet ? (
+                                <div className="text-sm font-semibold text-[#3d3d3d] leading-relaxed">
+                                  <p>{legal.courtStreet}</p>
+                                  <p>{legal.courtCity}, {legal.courtState} {legal.courtZip}</p>
+                                </div>
+                              ) : <p className="text-sm text-[#3d3d3d]">—</p>}
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  )
+                })()}
+              </div>
             ) : (
               // Original Assets/Other Views
               <>
