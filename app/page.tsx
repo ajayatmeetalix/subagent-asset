@@ -460,7 +460,7 @@ export default function EstateManagementPage() {
       authorityType: "Probate (Independent)",
       caseNumber: "24-PR-00412",
       jurisdiction: "Essex County Surrogate's Court",
-      bondRequired: true,
+      bondStatus: "Required",
       bondAmount: "25000",
       courtStreet: "465 Dr. Martin Luther King Jr. Blvd",
       courtCity: "Newark",
@@ -472,6 +472,8 @@ export default function EstateManagementPage() {
       courtHoursNote: "",
       refereeName: "",
       refereePhone: "",
+      refereeAddress: "",
+      refereeEmail: "",
     }
   })
 
@@ -2562,19 +2564,18 @@ export default function EstateManagementPage() {
                               </div>
                               <div className="grid grid-cols-3 gap-5 items-start">
                                 <div>
-                                  {lLabel("Bond Required")}
-                                  <div className="flex items-center gap-2 h-9">
-                                    <button
-                                      type="button"
-                                      onClick={() => setLegalEditForm((p: any) => ({ ...p, bondRequired: !p.bondRequired }))}
-                                      className={`relative inline-flex h-5 w-9 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors ${legalEditForm.bondRequired ? "bg-[#3d3d3d]" : "bg-[#d0d0d0]"}`}
-                                    >
-                                      <span className={`inline-block h-4 w-4 transform rounded-full bg-white shadow transition-transform ${legalEditForm.bondRequired ? "translate-x-4" : "translate-x-0"}`} />
-                                    </button>
-                                    <span className="text-sm text-[#3d3d3d]">{legalEditForm.bondRequired ? "Yes" : "No"}</span>
-                                  </div>
+                                  {lLabel("Bond")}
+                                  <select
+                                    value={legalEditForm.bondStatus || ""}
+                                    onChange={e => setLegalEditForm((p: any) => ({ ...p, bondStatus: e.target.value }))}
+                                    className="w-full h-9 px-3 text-sm bg-white border border-[#d0d0d0] rounded-md text-[#3d3d3d] focus:outline-none focus:ring-2 focus:ring-[#3d3d3d]"
+                                  >
+                                    <option value="">Select…</option>
+                                    <option value="Waived">Waived</option>
+                                    <option value="Required">Required</option>
+                                  </select>
                                 </div>
-                                {legalEditForm.bondRequired && (
+                                {legalEditForm.bondStatus === "Required" && (
                                   <div>{lLabel("Bond Amount")}{lField("bondAmount", "e.g. 25000")}</div>
                                 )}
                               </div>
@@ -2593,10 +2594,10 @@ export default function EstateManagementPage() {
                             </div>
                             <div className="grid grid-cols-3 gap-8">
                               <div>
-                                <p className="text-xs text-[#6b675f] mb-1.5">Bond Required</p>
-                                <p className="text-sm font-semibold text-[#3d3d3d]">{legal.bondRequired ? "Yes" : "No"}</p>
+                                <p className="text-xs text-[#6b675f] mb-1.5">Bond</p>
+                                <p className="text-sm font-semibold text-[#3d3d3d]">{legal.bondStatus || "—"}</p>
                               </div>
-                              {legal.bondRequired && (
+                              {legal.bondStatus === "Required" && (
                                 <div>
                                   <p className="text-xs text-[#6b675f] mb-1.5">Bond Amount</p>
                                   <p className="text-sm font-semibold text-[#3d3d3d]">${Number(legal.bondAmount || 0).toLocaleString()}</p>
@@ -2689,16 +2690,28 @@ export default function EstateManagementPage() {
                         </div>
                         {legalEditSection === "referee" ? (
                           <>
-                            <div className="px-5 py-5 grid grid-cols-2 gap-5">
-                              <div>{lLabel("Name")}{lField("refereeName", "Full name")}</div>
-                              <div>{lLabel("Phone")}{lField("refereePhone", "e.g. (415) 555-0100")}</div>
+                            <div className="px-5 py-5 space-y-5">
+                              <div className="grid grid-cols-2 gap-5">
+                                <div>{lLabel("Name")}{lField("refereeName", "Full name")}</div>
+                                <div>{lLabel("Phone")}{lField("refereePhone", "e.g. (415) 555-0100")}</div>
+                              </div>
+                              <div className="grid grid-cols-2 gap-5">
+                                <div>{lLabel("Address")}{lField("refereeAddress", "Street, City, State, ZIP")}</div>
+                                <div>{lLabel("Email")}{lField("refereeEmail", "e.g. referee@example.com")}</div>
+                              </div>
                             </div>
                             <CardActions />
                           </>
                         ) : (
-                          <div className="px-5 py-5 grid grid-cols-2 gap-8">
-                            {lVal("Name", legal.refereeName)}
-                            {lVal("Phone", legal.refereePhone)}
+                          <div className="px-5 py-5 space-y-4">
+                            <div className="grid grid-cols-2 gap-8">
+                              {lVal("Name", legal.refereeName)}
+                              {lVal("Phone", legal.refereePhone)}
+                            </div>
+                            <div className="grid grid-cols-2 gap-8">
+                              {lVal("Address", legal.refereeAddress)}
+                              {lVal("Email", legal.refereeEmail)}
+                            </div>
                           </div>
                         )}
                       </div>
