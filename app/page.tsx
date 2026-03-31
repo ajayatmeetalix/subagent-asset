@@ -459,11 +459,18 @@ export default function EstateManagementPage() {
       authorityType: "Probate (Independent)",
       caseNumber: "24-PR-00412",
       jurisdiction: "Essex County Surrogate's Court",
-      courtDate: "2025-04-15",
+      bondRequired: true,
+      bondAmount: "25000",
       courtStreet: "465 Dr. Martin Luther King Jr. Blvd",
       courtCity: "Newark",
       courtState: "NJ",
       courtZip: "07102",
+      courtPhone: "(973) 693-6800",
+      courtWebsite: "https://www.njcourts.gov/courts/superior/surrogates",
+      courtHoursPreset: "Mon–Fri, 8:30am–4:30pm",
+      courtHoursNote: "",
+      refereeName: "",
+      refereePhone: "",
     }
   })
 
@@ -2497,6 +2504,12 @@ export default function EstateManagementPage() {
                     />
                   )
                   const lLabel = (text: string) => <label className="block text-xs font-medium text-[#6b675f] mb-1">{text}</label>
+                  const lVal = (label: string, value: string) => (
+                    <div>
+                      <p className="text-xs text-[#6b675f] mb-1.5">{label}</p>
+                      <p className="text-sm font-semibold text-[#3d3d3d]">{value || "—"}</p>
+                    </div>
+                  )
                   const saveSection = () => {
                     setLegalInfo((prev: any) => ({ ...prev, [selectedEstate.id]: { ...(prev[selectedEstate.id] || {}), ...legalEditForm } }))
                     setLegalEditSection(null)
@@ -2515,6 +2528,7 @@ export default function EstateManagementPage() {
                   )
                   return (
                     <div className="max-w-4xl mx-auto py-6 px-6 space-y-5">
+
                       {/* Legal Authority */}
                       <div className="bg-white rounded-lg border border-[#e5e5e5] overflow-hidden">
                         <div className="border-l-4 border-[#3d3d3d] px-5 py-3 bg-[#fafafa] border-b border-[#e5e5e5] flex items-center justify-between">
@@ -2523,30 +2537,59 @@ export default function EstateManagementPage() {
                         </div>
                         {legalEditSection === "authority" ? (
                           <>
-                            <div className="px-5 py-5 grid grid-cols-3 gap-5">
-                              <div>{lLabel("Authority Type")}{lField("authorityType", "e.g. Probate (Independent)")}</div>
-                              <div>{lLabel("Case #")}{lField("caseNumber", "e.g. 24-PR-00412")}</div>
-                              <div>{lLabel("Jurisdiction")}{lField("jurisdiction", "e.g. Essex County Surrogate's Court")}</div>
+                            <div className="px-5 py-5 space-y-4">
+                              <div className="grid grid-cols-3 gap-5">
+                                <div>{lLabel("Authority Type")}{lField("authorityType", "e.g. Probate (Independent)")}</div>
+                                <div>{lLabel("Case #")}{lField("caseNumber", "e.g. 24-PR-00412")}</div>
+                                <div>{lLabel("Jurisdiction")}{lField("jurisdiction", "e.g. Essex County Surrogate's Court")}</div>
+                              </div>
+                              <div className="grid grid-cols-3 gap-5 items-start">
+                                <div>
+                                  {lLabel("Bond Required")}
+                                  <div className="flex items-center gap-2 h-9">
+                                    <button
+                                      type="button"
+                                      onClick={() => setLegalEditForm((p: any) => ({ ...p, bondRequired: !p.bondRequired }))}
+                                      className={`relative inline-flex h-5 w-9 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors ${legalEditForm.bondRequired ? "bg-[#3d3d3d]" : "bg-[#d0d0d0]"}`}
+                                    >
+                                      <span className={`inline-block h-4 w-4 transform rounded-full bg-white shadow transition-transform ${legalEditForm.bondRequired ? "translate-x-4" : "translate-x-0"}`} />
+                                    </button>
+                                    <span className="text-sm text-[#3d3d3d]">{legalEditForm.bondRequired ? "Yes" : "No"}</span>
+                                  </div>
+                                </div>
+                                {legalEditForm.bondRequired && (
+                                  <div>{lLabel("Bond Amount")}{lField("bondAmount", "e.g. 25000")}</div>
+                                )}
+                              </div>
                             </div>
                             <CardActions />
                           </>
                         ) : (
-                          <div className="px-5 py-5 grid grid-cols-3 gap-8">
-                            <div>
-                              <p className="text-xs text-[#6b675f] mb-1.5">Authority Type</p>
-                              <p className="text-sm font-semibold text-[#3d3d3d]">{legal.authorityType || "—"}</p>
+                          <div className="px-5 py-5 space-y-5">
+                            <div className="grid grid-cols-3 gap-8">
+                              {lVal("Authority Type", legal.authorityType)}
+                              <div>
+                                <p className="text-xs text-[#6b675f] mb-1.5">Case #</p>
+                                <p className="text-sm font-semibold text-[#3d3d3d] font-mono">{legal.caseNumber || "—"}</p>
+                              </div>
+                              {lVal("Jurisdiction", legal.jurisdiction)}
                             </div>
-                            <div>
-                              <p className="text-xs text-[#6b675f] mb-1.5">Case #</p>
-                              <p className="text-sm font-semibold text-[#3d3d3d] font-mono">{legal.caseNumber || "—"}</p>
-                            </div>
-                            <div>
-                              <p className="text-xs text-[#6b675f] mb-1.5">Probate Jurisdiction</p>
-                              <p className="text-sm font-semibold text-[#3d3d3d]">{legal.jurisdiction || "—"}</p>
+                            <div className="grid grid-cols-3 gap-8">
+                              <div>
+                                <p className="text-xs text-[#6b675f] mb-1.5">Bond Required</p>
+                                <p className="text-sm font-semibold text-[#3d3d3d]">{legal.bondRequired ? "Yes" : "No"}</p>
+                              </div>
+                              {legal.bondRequired && (
+                                <div>
+                                  <p className="text-xs text-[#6b675f] mb-1.5">Bond Amount</p>
+                                  <p className="text-sm font-semibold text-[#3d3d3d]">${Number(legal.bondAmount || 0).toLocaleString()}</p>
+                                </div>
+                              )}
                             </div>
                           </div>
                         )}
                       </div>
+
                       {/* Court Details */}
                       <div className="bg-white rounded-lg border border-[#e5e5e5] overflow-hidden">
                         <div className="border-l-4 border-[#3d3d3d] px-5 py-3 bg-[#fafafa] border-b border-[#e5e5e5] flex items-center justify-between">
@@ -2556,22 +2599,44 @@ export default function EstateManagementPage() {
                         {legalEditSection === "court" ? (
                           <>
                             <div className="px-5 py-5 space-y-4">
-                              <div className="max-w-xs">{lLabel("Court Date")}{lField("courtDate", "", "date")}</div>
                               <div>{lLabel("Street Address")}{lField("courtStreet", "Street address")}</div>
                               <div className="grid grid-cols-3 gap-3">
                                 <div className="col-span-1">{lLabel("City")}{lField("courtCity", "City")}</div>
                                 <div>{lLabel("State")}{lField("courtState", "State")}</div>
                                 <div>{lLabel("ZIP")}{lField("courtZip", "ZIP")}</div>
                               </div>
+                              <div className="grid grid-cols-2 gap-5">
+                                <div>{lLabel("Phone")}{lField("courtPhone", "e.g. (973) 693-6800")}</div>
+                                <div>{lLabel("Website")}{lField("courtWebsite", "https://")}</div>
+                              </div>
+                              <div>
+                                {lLabel("Hours of Operation")}
+                                <select
+                                  value={legalEditForm.courtHoursPreset || ""}
+                                  onChange={e => setLegalEditForm((p: any) => ({ ...p, courtHoursPreset: e.target.value }))}
+                                  className="w-full h-9 px-3 text-sm bg-white border border-[#d0d0d0] rounded-md text-[#3d3d3d] focus:outline-none focus:ring-2 focus:ring-[#3d3d3d]"
+                                >
+                                  <option value="">Select hours…</option>
+                                  <option>Mon–Fri, 8:00am–4:00pm</option>
+                                  <option>Mon–Fri, 8:30am–4:30pm</option>
+                                  <option>Mon–Fri, 9:00am–5:00pm</option>
+                                  <option>Mon–Fri, 8:00am–5:00pm</option>
+                                  <option>Mon–Thu, 8:30am–4:30pm</option>
+                                  <option>Other</option>
+                                </select>
+                                <input
+                                  type="text"
+                                  value={legalEditForm.courtHoursNote || ""}
+                                  onChange={e => setLegalEditForm((p: any) => ({ ...p, courtHoursNote: e.target.value }))}
+                                  placeholder="Exceptions or notes (e.g. Closed 12–1pm for lunch)"
+                                  className="w-full h-9 px-3 mt-2 text-sm bg-white border border-[#d0d0d0] rounded-md text-[#3d3d3d] placeholder:text-[#c0c0c0] focus:outline-none focus:ring-2 focus:ring-[#3d3d3d]"
+                                />
+                              </div>
                             </div>
                             <CardActions />
                           </>
                         ) : (
-                          <div className="px-5 py-5 grid grid-cols-2 gap-8">
-                            <div>
-                              <p className="text-xs text-[#6b675f] mb-1.5">Court Date</p>
-                              <p className="text-sm font-semibold text-[#3d3d3d]">{formatDate(legal.courtDate)}</p>
-                            </div>
+                          <div className="px-5 py-5 space-y-5">
                             <div>
                               <p className="text-xs text-[#6b675f] mb-1.5">Court Address</p>
                               {legal.courtStreet ? (
@@ -2579,11 +2644,110 @@ export default function EstateManagementPage() {
                                   <p>{legal.courtStreet}</p>
                                   <p>{legal.courtCity}, {legal.courtState} {legal.courtZip}</p>
                                 </div>
-                              ) : <p className="text-sm text-[#3d3d3d]">—</p>}
+                              ) : <p className="text-sm font-semibold text-[#3d3d3d]">—</p>}
+                            </div>
+                            <div className="grid grid-cols-3 gap-8">
+                              {lVal("Phone", legal.courtPhone)}
+                              <div>
+                                <p className="text-xs text-[#6b675f] mb-1.5">Website</p>
+                                {legal.courtWebsite
+                                  ? <a href={legal.courtWebsite} target="_blank" rel="noreferrer" className="text-sm font-semibold text-blue-600 hover:underline truncate block">{legal.courtWebsite}</a>
+                                  : <p className="text-sm font-semibold text-[#3d3d3d]">—</p>}
+                              </div>
+                              <div>
+                                <p className="text-xs text-[#6b675f] mb-1.5">Hours of Operation</p>
+                                <p className="text-sm font-semibold text-[#3d3d3d]">{legal.courtHoursPreset || "—"}</p>
+                                {legal.courtHoursNote && <p className="text-xs text-[#6b675f] mt-1">{legal.courtHoursNote}</p>}
+                              </div>
                             </div>
                           </div>
                         )}
                       </div>
+
+                      {/* Probate Referee */}
+                      <div className="bg-white rounded-lg border border-[#e5e5e5] overflow-hidden">
+                        <div className="border-l-4 border-[#3d3d3d] px-5 py-3 bg-[#fafafa] border-b border-[#e5e5e5] flex items-center justify-between">
+                          <h3 className="text-[11px] font-bold text-[#3d3d3d] uppercase tracking-widest">Probate Referee</h3>
+                          {legalEditSection !== "referee" && <CardEditBtn section="referee" />}
+                        </div>
+                        {legalEditSection === "referee" ? (
+                          <>
+                            <div className="px-5 py-5 grid grid-cols-2 gap-5">
+                              <div>{lLabel("Name")}{lField("refereeName", "Full name")}</div>
+                              <div>{lLabel("Phone")}{lField("refereePhone", "e.g. (415) 555-0100")}</div>
+                            </div>
+                            <CardActions />
+                          </>
+                        ) : (
+                          <div className="px-5 py-5 grid grid-cols-2 gap-8">
+                            {lVal("Name", legal.refereeName)}
+                            {lVal("Phone", legal.refereePhone)}
+                          </div>
+                        )}
+                      </div>
+
+                      {/* Key Dates & Milestones — read-only, sourced from Timeline */}
+                      <div className="bg-white rounded-lg border border-[#e5e5e5] overflow-hidden">
+                        <div className="border-l-4 border-[#6b675f] px-5 py-3 bg-[#fafafa] border-b border-[#e5e5e5] flex items-center justify-between">
+                          <div>
+                            <h3 className="text-[11px] font-bold text-[#3d3d3d] uppercase tracking-widest">Key Dates &amp; Milestones</h3>
+                            <p className="text-[11px] text-[#9b9b9b] mt-0.5">Sourced from Timeline — edit there to make changes</p>
+                          </div>
+                          <button
+                            onClick={() => setActiveNav("timeline")}
+                            className="flex items-center gap-1 text-xs text-[#6b675f] hover:text-[#3d3d3d] transition-colors"
+                          >
+                            <span>Go to Timeline</span>
+                            <ChevronRight className="w-3 h-3" />
+                          </button>
+                        </div>
+                        {(() => {
+                          const allDates: Array<{ label: string; date: string; notes: string; type: "milestone" | "keydate" }> = [
+                            ...milestones.map(m => ({
+                              label: m.name,
+                              date: m.date,
+                              notes: m.description || "",
+                              type: "milestone" as const
+                            })),
+                            ...keyDates.map(kd => ({
+                              label: kd.title,
+                              date: kd.date,
+                              notes: kd.notes || "",
+                              type: "keydate" as const
+                            }))
+                          ].sort((a, b) => {
+                            const parseDate = (d: string) => {
+                              const iso = Date.parse(d)
+                              return isNaN(iso) ? Date.parse(new Date(d).toISOString()) : iso
+                            }
+                            return parseDate(a.date) - parseDate(b.date)
+                          })
+                          if (allDates.length === 0) {
+                            return (
+                              <div className="px-5 py-8 text-center text-sm text-[#9b9b9b]">
+                                No milestones or key dates yet. Add them in Timeline.
+                              </div>
+                            )
+                          }
+                          return (
+                            <div className="divide-y divide-[#f0f0f0]">
+                              {allDates.map((item, i) => (
+                                <div key={i} className="px-5 py-3 flex items-start gap-4">
+                                  <span className={`mt-0.5 inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-semibold flex-shrink-0 ${item.type === "milestone" ? "bg-[#ececec] text-[#3d3d3d]" : "bg-blue-50 text-blue-700"}`}>
+                                    {item.type === "milestone" ? "Milestone" : "Key Date"}
+                                  </span>
+                                  <div className="flex-1 min-w-0">
+                                    <p className="text-sm font-medium text-[#3d3d3d]">{item.label}</p>
+                                    {item.notes && <p className="text-xs text-[#6b675f] mt-0.5 leading-relaxed">{item.notes}</p>}
+                                  </div>
+                                  <p className="text-xs text-[#6b675f] flex-shrink-0 mt-0.5">{item.date}</p>
+                                </div>
+                              ))}
+                            </div>
+                          )
+                        })()}
+                      </div>
+
                     </div>
                   )
                 })()}
