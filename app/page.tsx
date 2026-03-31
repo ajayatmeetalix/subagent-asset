@@ -339,7 +339,7 @@ export default function EstateManagementPage() {
     {
       id: "168a8b40-df79-...",
       shortId: "168a8b40-df79-...",
-      name: "Bunny2 Folger",
+      name: "Bunny 2Folger",
       executors: ["Tim Timson"],
       status: "Active",
       createdAt: "09/14/2023",
