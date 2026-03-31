@@ -2540,7 +2540,23 @@ export default function EstateManagementPage() {
                           <>
                             <div className="px-5 py-5 space-y-4">
                               <div className="grid grid-cols-3 gap-5">
-                                <div>{lLabel("Authority Type")}{lField("authorityType", "e.g. Probate (Independent)")}</div>
+                                <div>
+                                  {lLabel("Authority Type")}
+                                  <select
+                                    value={legalEditForm.authorityType || ""}
+                                    onChange={e => setLegalEditForm((p: any) => ({ ...p, authorityType: e.target.value }))}
+                                    className="w-full h-9 px-3 text-sm bg-white border border-[#d0d0d0] rounded-md text-[#3d3d3d] focus:outline-none focus:ring-2 focus:ring-[#3d3d3d]"
+                                  >
+                                    <option value="">Select…</option>
+                                    <option value="Probate (Dependent)">Probate (Dependent)</option>
+                                    <option value="Probate (Independent)">Probate (Independent)</option>
+                                    <option value="Small Estate Affidavit">Small Estate Affidavit</option>
+                                    <option value="Trust Administration">Trust Administration</option>
+                                    <option value="Joint Tenancy">Joint Tenancy</option>
+                                    <option value="Beneficiary Designations">Beneficiary Designations</option>
+                                    <option value="Other">Other</option>
+                                  </select>
+                                </div>
                                 <div>{lLabel("Case #")}{lField("caseNumber", "e.g. 24-PR-00412")}</div>
                                 <div>{lLabel("Jurisdiction")}{lField("jurisdiction", "e.g. Essex County Surrogate's Court")}</div>
                               </div>
