@@ -2,7 +2,7 @@
 
 import { useState } from "react"
 import { format } from "date-fns"
-import { Home, Briefcase, FileText, Trash2, Users, Building2, Copy, ChevronRight, ArrowLeft, Download, Plus, Menu, RefreshCw, User, CreditCard, DollarSign, Lock, Clipboard, UserCircle, BarChart3, FileCheck, UserPlus, CircleDollarSign, MousePointer, FolderOpen, Search, Edit, Folder, Grid, Upload, FolderPlus, MoreVertical, Trash, Edit2, X, File, CheckCircle, Image, FileImage, FolderInput, Eye, CalendarDays, Clock, CheckCircle2, AlertCircle } from "lucide-react"
+import { Home, Briefcase, FileText, Trash2, Users, Building2, Copy, ChevronRight, ArrowLeft, Download, Plus, Menu, RefreshCw, User, CreditCard, DollarSign, Lock, Clipboard, UserCircle, BarChart3, FileCheck, UserPlus, CircleDollarSign, MousePointer, FolderOpen, Search, Edit, Folder, Grid, Upload, FolderPlus, MoreVertical, Trash, Edit2, X, File, CheckCircle, Image, FileImage, FolderInput, Eye, CalendarDays, Clock, CheckCircle2, AlertCircle, Loader2, AlertTriangle, Ban, ChevronDown } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 
@@ -181,6 +181,52 @@ const JOBS_BOARD_TASKS = [
   { id: "c3", slug: "define_plan_for_probate_lawyer", title: "Define plan for probate lawyer engagement", assignee: "Admin Test", assigneeEmail: "", reviewer: "", createdAt: "Apr 6, 2026 3:18 PM", updatedAt: "Apr 6, 2026 3:18 PM", status: "completed", priority: "", jobVersion: 1, jobId: "", steps: { done: 2, total: 2 }, description: "", stepItems: [] },
 ]
 
+const SAUL_CLASSIFICATION_RESPONSE = {
+  classification: {
+    assets: [
+      { asset: "Income Property Apartment", bucket: "PROBATE", reason: "Sole ownership real estate requires probate for transfer.", confidence: 0.95 },
+      { asset: "Trading Account", bucket: "PROBATE", reason: "Brokerage account without POD/TOD designation requires probate.", confidence: 0.88 },
+      { asset: "Primary Savings Account", bucket: "PROBATE", reason: "Savings account without POD/TOD designation requires probate.", confidence: 0.88 },
+      { asset: "Rental income from 22 University", bucket: "PROBATE", reason: "Income received after death is part of the probate estate.", confidence: 0.72 },
+      { asset: "Money Owed to Decedent", bucket: "PROBATE", reason: "Unvalidated money owed is part of the probate estate.", confidence: 0.61 },
+      { asset: "Family Home", bucket: "TRUST", reason: "Property owned by a trust is transferred through trust administration.", confidence: 0.97 },
+      { asset: "Art Collection", bucket: "PROBATE", reason: "Personal property exceeding SEA threshold requires probate.", confidence: 0.74 },
+      { asset: "Vehicle (Kia Soul)", bucket: "SMALL_ESTATE_AFFIDAVIT", reason: "Vehicle can be transferred using DMV REG 5 without probate.", confidence: 0.93 },
+      { asset: "Life Insurance", bucket: "POD_TOD", reason: "Life insurance with a named beneficiary transfers directly to the named beneficiary outside probate.", confidence: 0.96 },
+      { asset: "Retirement Account (401k)", bucket: "POD_TOD", reason: "Retirement account with a named beneficiary transfers directly outside probate.", confidence: 0.96 },
+    ],
+  },
+  plan: {
+    actions: [
+      { description: "File death claim with State Farm for life insurance.", deadline: "As soon as practicable", required_forms: [] },
+      { description: "Contact Fidelity with certified death certificate for 401k transfer.", deadline: "As soon as practicable", required_forms: [] },
+      { description: "Distribute Family Home per trust terms.", deadline: "As soon as practicable", required_forms: [] },
+      { description: "Complete DMV Form REG 5 for vehicle transfer.", deadline: "As soon as practicable", required_forms: ["REG 5"] },
+      { description: "Initiate formal probate for remaining assets.", deadline: "As soon as practicable", required_forms: ["DE-111", "DE-160", "DE-161"] },
+      { description: "File Change in Ownership Statement for real property.", deadline: "2025-10-12", required_forms: ["BOE-502-D"] },
+    ],
+    flags: [
+      { type: "MISSED_DEADLINE", description: "Lodge original will with court was due Jun 14, 2025. Court may impose penalties under §8200.", severity: "HIGH" },
+    ],
+    blocked_paths: [
+      { procedure: "Spousal Property Petition (§13500)", reason: "Unavailable — no surviving spouse." },
+      { procedure: "Spousal Wage Affidavit", reason: "Unavailable — no surviving spouse." },
+    ],
+  },
+}
+
+const BUCKET_CONFIG: Record<string, { label: string; bg: string; text: string; border: string }> = {
+  PROBATE: { label: "Probate", bg: "bg-gray-100", text: "text-gray-600", border: "border-gray-200" },
+  TRUST: { label: "Trust", bg: "bg-purple-50", text: "text-purple-700", border: "border-purple-200" },
+  SMALL_ESTATE_AFFIDAVIT: { label: "Small estate affidavit", bg: "bg-blue-50", text: "text-blue-600", border: "border-blue-200" },
+  POD_TOD: { label: "POD / TOD", bg: "bg-green-50", text: "text-green-700", border: "border-green-200" },
+  COMMUNITY_PROPERTY: { label: "Community property", bg: "bg-teal-50", text: "text-teal-700", border: "border-teal-200" },
+  JOINT_TENANCY: { label: "Joint tenancy", bg: "bg-teal-50", text: "text-teal-700", border: "border-teal-200" },
+  SPOUSAL_TRANSFER: { label: "Spousal transfer", bg: "bg-teal-50", text: "text-teal-700", border: "border-teal-200" },
+}
+
+const BUCKET_OPTIONS = ["PROBATE", "TRUST", "SMALL_ESTATE_AFFIDAVIT", "POD_TOD", "COMMUNITY_PROPERTY", "JOINT_TENANCY", "SPOUSAL_TRANSFER"]
+
 export default function EstateManagementPage() {
   const [activeNav, setActiveNav] = useState("home")
   const [displayTestEstates, setDisplayTestEstates] = useState(false)
@@ -194,6 +240,34 @@ export default function EstateManagementPage() {
   const [taskStepChecked, setTaskStepChecked] = useState<Record<string, boolean>>({})
   const [taskModalTab, setTaskModalTab] = useState<"conversations" | "history">("conversations")
   const [taskComment, setTaskComment] = useState("")
+  const [classificationState, setClassificationState] = useState<"idle" | "loading" | "review" | "approved">("idle")
+  const [classificationData, setClassificationData] = useState<typeof SAUL_CLASSIFICATION_RESPONSE | null>(null)
+  const [bucketOverrides, setBucketOverrides] = useState<Record<number, string>>({})
+  const [overrideReasons, setOverrideReasons] = useState<Record<number, string>>({})
+
+  const resetClassificationState = () => {
+    setClassificationState("idle")
+    setClassificationData(null)
+    setBucketOverrides({})
+    setOverrideReasons({})
+  }
+
+  const handleRunClassification = () => {
+    setClassificationState("loading")
+    setTimeout(() => {
+      setClassificationData(SAUL_CLASSIFICATION_RESPONSE)
+      setClassificationState("review")
+    }, 2500)
+  }
+
+  const handleApproveClassification = () => {
+    setClassificationState("approved")
+    setTimeout(() => {
+      setTaskModalOpen(false)
+      resetClassificationState()
+    }, 2000)
+  }
+
   const [currentFolder, setCurrentFolder] = useState<string | null>(null)
   const [folders, setFolders] = useState<Record<string, Array<{ name: string; modified: string }>>>({
     root: [
@@ -2905,7 +2979,7 @@ export default function EstateManagementPage() {
                     const TaskCard = ({ task }: { task: typeof JOBS_BOARD_TASKS[0] }) => (
                       <div
                         className="bg-white rounded-lg border border-[#e5e5e5] p-4 hover:border-[#c0bcb6] hover:shadow-sm transition-all cursor-pointer"
-                        onClick={() => { setTaskModalId(task.id); setTaskModalOpen(true); }}
+                        onClick={() => { setTaskModalId(task.id); setTaskModalOpen(true); resetClassificationState(); }}
                       >
                         <p className="text-[10px] text-[#9b9b9b] font-mono mb-1.5 leading-tight truncate">{task.slug}</p>
                         <p className="text-sm font-semibold text-[#3d3d3d] mb-3 leading-snug">{task.title}</p>
@@ -2936,7 +3010,7 @@ export default function EstateManagementPage() {
                           </div>
                           <button
                             className="text-[11px] text-[#7c6fc4] hover:text-[#5a4fa0] flex items-center gap-0.5 font-medium"
-                            onClick={e => { e.stopPropagation(); setTaskModalId(task.id); setTaskModalOpen(true); }}
+                            onClick={e => { e.stopPropagation(); setTaskModalId(task.id); setTaskModalOpen(true); resetClassificationState(); }}
                           >
                             View estate <ChevronRight className="w-3 h-3" />
                           </button>
@@ -2977,7 +3051,7 @@ export default function EstateManagementPage() {
                   const task = JOBS_BOARD_TASKS.find(t => t.id === taskModalId)
                   if (!task) return null
                   return (
-                    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4" onClick={() => setTaskModalOpen(false)}>
+                    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4" onClick={() => { setTaskModalOpen(false); resetClassificationState(); }}>
                       <div
                         className="bg-white rounded-xl shadow-2xl w-full max-w-5xl max-h-[90vh] flex flex-col overflow-hidden"
                         onClick={e => e.stopPropagation()}
@@ -2988,7 +3062,7 @@ export default function EstateManagementPage() {
                             <p className="text-[11px] text-[#9b9b9b] font-mono mb-1">{task.slug}</p>
                             <h2 className="text-xl font-bold text-[#1a1a2e]">{task.title}</h2>
                           </div>
-                          <button onClick={() => setTaskModalOpen(false)} className="text-[#9b9b9b] hover:text-[#3d3d3d] ml-4 mt-1">
+                          <button onClick={() => { setTaskModalOpen(false); resetClassificationState(); }} className="text-[#9b9b9b] hover:text-[#3d3d3d] ml-4 mt-1">
                             <X className="w-5 h-5" />
                           </button>
                         </div>
@@ -2997,100 +3071,251 @@ export default function EstateManagementPage() {
                         <div className="flex flex-1 overflow-hidden">
                           {/* Left panel */}
                           <div className="flex-1 overflow-auto px-8 py-6 space-y-8">
+                            {task.slug === "confirm_asset_classification" ? (
+                              <>
+                                {/* Description (always visible) */}
+                                {task.description && (
+                                  <div>
+                                    <h3 className="text-sm font-semibold text-[#3d3d3d] mb-3">Description</h3>
+                                    <p className="text-sm text-[#4a4a4a] leading-relaxed">{task.description}</p>
+                                  </div>
+                                )}
 
-                            {/* Description */}
-                            {task.description && (
-                              <div>
-                                <h3 className="text-sm font-semibold text-[#3d3d3d] mb-3">Description</h3>
-                                <p className="text-sm text-[#4a4a4a] leading-relaxed">{task.description}</p>
-                              </div>
-                            )}
-
-                            {/* Steps */}
-                            {task.stepItems && task.stepItems.length > 0 && (
-                              <div>
-                                <h3 className="text-sm font-semibold text-[#3d3d3d] mb-4">Steps</h3>
-                                <div className="space-y-3">
-                                  {task.stepItems.map(step => (
-                                    <div key={step.id} className="flex items-start gap-3">
-                                      <input
-                                        type="checkbox"
-                                        checked={!!taskStepChecked[`${task.id}-${step.id}`]}
-                                        onChange={e => setTaskStepChecked(prev => ({ ...prev, [`${task.id}-${step.id}`]: e.target.checked }))}
-                                        className="mt-0.5 flex-shrink-0 w-4 h-4 rounded border-[#d0d0d0] accent-[#1a1a2e] cursor-pointer"
-                                      />
-                                      <div className="flex items-start gap-3 flex-1 bg-[#fafafa] border border-[#f0f0f0] rounded-lg px-4 py-3">
-                                        <span className="flex-shrink-0 w-7 h-7 bg-[#1a1a2e] text-white rounded-full flex items-center justify-center text-xs font-bold">{step.id}</span>
-                                        <p className="text-sm text-[#3d3d3d] leading-relaxed">{step.text}</p>
-                                      </div>
+                                {/* IDLE state */}
+                                {classificationState === "idle" && (
+                                  <div className="bg-[#fafafa] border border-[#e5e5e5] rounded-lg p-6">
+                                    <div className="flex items-center gap-2 mb-2">
+                                      <BarChart3 className="w-4 h-4 text-[#7c6fc4]" />
+                                      <h3 className="text-sm font-semibold text-[#3d3d3d]">Asset Classification</h3>
                                     </div>
-                                  ))}
+                                    <p className="text-sm text-[#6b675f] mb-4">Run SAUL to automatically classify all estate assets into transfer buckets.</p>
+                                    <Button
+                                      onClick={handleRunClassification}
+                                      className="bg-[#7c6fc4] hover:bg-[#5a4fa0] text-white h-9 px-5 text-sm"
+                                    >
+                                      Run classification
+                                    </Button>
+                                  </div>
+                                )}
+
+                                {/* LOADING state */}
+                                {classificationState === "loading" && (
+                                  <div className="bg-[#fafafa] border border-[#e5e5e5] rounded-lg p-6">
+                                    <div className="flex items-center gap-2 mb-2">
+                                      <BarChart3 className="w-4 h-4 text-[#7c6fc4]" />
+                                      <h3 className="text-sm font-semibold text-[#3d3d3d]">Asset Classification</h3>
+                                    </div>
+                                    <div className="flex items-center gap-3 mt-4">
+                                      <Loader2 className="w-5 h-5 text-[#7c6fc4] animate-spin" />
+                                      <span className="text-sm text-[#6b675f]">SAUL is classifying assets...</span>
+                                    </div>
+                                  </div>
+                                )}
+
+                                {/* REVIEW state */}
+                                {classificationState === "review" && classificationData && (() => {
+                                  const assets = classificationData.classification.assets
+                                  const flags = classificationData.plan.flags
+                                  const blockedPaths = classificationData.plan.blocked_paths
+                                  return (
+                                    <>
+                                      {/* Blocked paths banner */}
+                                      {blockedPaths.length > 0 && (
+                                        <div className="bg-gray-50 border border-gray-200 rounded-lg px-4 py-3">
+                                          <div className="flex items-center gap-2 mb-2">
+                                            <Ban className="w-4 h-4 text-gray-500 flex-shrink-0" />
+                                            <span className="text-xs font-semibold text-gray-600 uppercase">Blocked paths</span>
+                                          </div>
+                                          <div className="ml-6 space-y-1">
+                                            {blockedPaths.map((bp, i) => (
+                                              <p key={`bp-${i}`} className="text-sm text-gray-700">
+                                                <span className="font-medium">{bp.procedure}</span> — {bp.reason}
+                                              </p>
+                                            ))}
+                                          </div>
+                                        </div>
+                                      )}
+
+                                      {/* Asset table */}
+                                      <div>
+                                        <div className="border border-[#e5e5e5] rounded-lg overflow-hidden">
+                                          {/* Table header */}
+                                          <div className="grid grid-cols-[1fr_140px_90px] gap-2 px-4 py-2.5 bg-[#fafafa] border-b border-[#e5e5e5]">
+                                            <span className="text-[10px] font-semibold text-[#9b9b9b] uppercase tracking-wider">Asset</span>
+                                            <span className="text-[10px] font-semibold text-[#9b9b9b] uppercase tracking-wider">Bucket</span>
+                                            <span className="text-[10px] font-semibold text-[#9b9b9b] uppercase tracking-wider">Confidence</span>
+                                          </div>
+                                          {/* Table rows */}
+                                          {assets.map((asset, idx) => {
+                                            const effectiveBucket = bucketOverrides[idx] ?? asset.bucket
+                                            const bucketCfg = BUCKET_CONFIG[effectiveBucket] ?? BUCKET_CONFIG.PROBATE
+                                            const isOverridden = idx in bucketOverrides
+                                            const isLowConfidence = asset.confidence < 0.70
+                                            const confidenceLevel = asset.confidence >= 0.90 ? "high" : asset.confidence >= 0.70 ? "medium" : "low"
+                                            const confidenceColor = confidenceLevel === "high" ? "bg-green-500" : confidenceLevel === "medium" ? "bg-amber-400" : "bg-red-500"
+                                            const confidenceLabel = confidenceLevel === "high" ? "High" : confidenceLevel === "medium" ? "Medium" : "Low"
+
+                                            return (
+                                              <div key={idx}>
+                                                <div className={`grid grid-cols-[1fr_140px_90px] gap-2 px-4 py-3 border-b border-[#f0f0f0] items-start ${isLowConfidence ? "bg-red-50/40" : ""}`}>
+                                                  <div>
+                                                    <span className="text-sm text-[#3d3d3d] font-medium">{asset.asset}</span>
+                                                    <p className="text-xs text-[#9b9b9b] leading-relaxed mt-0.5">{asset.reason}</p>
+                                                  </div>
+                                                  <div>
+                                                    <div className={`relative inline-flex items-center rounded-md ${bucketCfg.bg} border ${bucketCfg.border}`}>
+                                                      <select
+                                                        value={effectiveBucket}
+                                                        onChange={e => {
+                                                          const newBucket = e.target.value
+                                                          if (newBucket === asset.bucket) {
+                                                            setBucketOverrides(prev => { const next = { ...prev }; delete next[idx]; return next })
+                                                            setOverrideReasons(prev => { const next = { ...prev }; delete next[idx]; return next })
+                                                          } else {
+                                                            setBucketOverrides(prev => ({ ...prev, [idx]: newBucket }))
+                                                          }
+                                                        }}
+                                                        className={`text-xs font-medium ${bucketCfg.text} bg-transparent pl-2.5 pr-6 py-1 appearance-none cursor-pointer focus:outline-none`}
+                                                      >
+                                                        {BUCKET_OPTIONS.map(key => (
+                                                          <option key={key} value={key}>{BUCKET_CONFIG[key].label}</option>
+                                                        ))}
+                                                      </select>
+                                                      <ChevronDown className={`w-3 h-3 ${bucketCfg.text} absolute right-1.5 pointer-events-none`} />
+                                                    </div>
+                                                  </div>
+                                                  <div className="flex items-center gap-1.5">
+                                                    <span className={`w-2 h-2 rounded-full ${confidenceColor} flex-shrink-0`} />
+                                                    <span className={`text-xs ${confidenceLevel === "low" ? "text-red-600 font-medium" : "text-[#6b675f]"}`}>{confidenceLabel}</span>
+                                                  </div>
+                                                </div>
+                                                {/* Override reason input */}
+                                                {isOverridden && (
+                                                  <div className="px-4 py-3 bg-[#fafafa] border-b border-[#f0f0f0]">
+                                                    <label className="block text-xs text-[#9b9b9b] mb-1.5">Why are you changing this classification? <span className="text-red-500">*</span></label>
+                                                    <Input
+                                                      value={overrideReasons[idx] ?? ""}
+                                                      onChange={e => setOverrideReasons(prev => ({ ...prev, [idx]: e.target.value }))}
+                                                      placeholder="Enter reason for override..."
+                                                      className={`h-8 text-sm ${!overrideReasons[idx]?.trim() ? "border-red-300 focus:border-red-400" : "border-[#e5e5e5]"}`}
+                                                    />
+                                                  </div>
+                                                )}
+                                              </div>
+                                            )
+                                          })}
+                                        </div>
+                                      </div>
+                                    </>
+                                  )
+                                })()}
+
+                                {/* APPROVED state */}
+                                {classificationState === "approved" && (
+                                  <div className="flex flex-col items-center justify-center py-16">
+                                    <CheckCircle2 className="w-12 h-12 text-green-500 mb-4" />
+                                    <h3 className="text-lg font-semibold text-[#3d3d3d] mb-1">Classification approved</h3>
+                                    <p className="text-sm text-[#9b9b9b]">Closing...</p>
+                                  </div>
+                                )}
+                              </>
+                            ) : (
+                              <>
+                                {/* Description */}
+                                {task.description && (
+                                  <div>
+                                    <h3 className="text-sm font-semibold text-[#3d3d3d] mb-3">Description</h3>
+                                    <p className="text-sm text-[#4a4a4a] leading-relaxed">{task.description}</p>
+                                  </div>
+                                )}
+
+                                {/* Steps */}
+                                {task.stepItems && task.stepItems.length > 0 && (
+                                  <div>
+                                    <h3 className="text-sm font-semibold text-[#3d3d3d] mb-4">Steps</h3>
+                                    <div className="space-y-3">
+                                      {task.stepItems.map(step => (
+                                        <div key={step.id} className="flex items-start gap-3">
+                                          <input
+                                            type="checkbox"
+                                            checked={!!taskStepChecked[`${task.id}-${step.id}`]}
+                                            onChange={e => setTaskStepChecked(prev => ({ ...prev, [`${task.id}-${step.id}`]: e.target.checked }))}
+                                            className="mt-0.5 flex-shrink-0 w-4 h-4 rounded border-[#d0d0d0] accent-[#1a1a2e] cursor-pointer"
+                                          />
+                                          <div className="flex items-start gap-3 flex-1 bg-[#fafafa] border border-[#f0f0f0] rounded-lg px-4 py-3">
+                                            <span className="flex-shrink-0 w-7 h-7 bg-[#1a1a2e] text-white rounded-full flex items-center justify-center text-xs font-bold">{step.id}</span>
+                                            <p className="text-sm text-[#3d3d3d] leading-relaxed">{step.text}</p>
+                                          </div>
+                                        </div>
+                                      ))}
+                                    </div>
+                                  </div>
+                                )}
+
+                                {/* Attachments */}
+                                <div>
+                                  <h3 className="text-sm font-semibold text-[#3d3d3d] mb-3">Attachments</h3>
+                                  <div className="border-2 border-dashed border-[#e5e5e5] rounded-lg px-6 py-5 flex items-center justify-center gap-3 cursor-pointer hover:border-[#c0bcb6] transition-colors">
+                                    <Upload className="w-5 h-5 text-[#9b9b9b]" />
+                                    <span className="text-sm text-[#6b675f]">Drag and drop files here, or click to select</span>
+                                  </div>
+                                  <p className="text-xs text-[#9b9b9b] text-center mt-3">No attachments yet</p>
                                 </div>
-                              </div>
+
+                                <div className="border-t border-[#f0f0f0]" />
+
+                                {/* Activity */}
+                                <div>
+                                  <h3 className="text-sm font-semibold text-[#3d3d3d] mb-4">Activity</h3>
+                                  <div className="flex gap-6 border-b border-[#e5e5e5] mb-5">
+                                    <button
+                                      onClick={() => setTaskModalTab("conversations")}
+                                      className={`pb-2 text-sm font-medium border-b-2 transition-colors ${taskModalTab === "conversations" ? "border-[#1a1a2e] text-[#1a1a2e]" : "border-transparent text-[#9b9b9b] hover:text-[#3d3d3d]"}`}
+                                    >
+                                      Conversations
+                                    </button>
+                                    <button
+                                      onClick={() => setTaskModalTab("history")}
+                                      className={`pb-2 text-sm font-medium border-b-2 transition-colors ${taskModalTab === "history" ? "border-[#1a1a2e] text-[#1a1a2e]" : "border-transparent text-[#9b9b9b] hover:text-[#3d3d3d]"}`}
+                                    >
+                                      History
+                                    </button>
+                                  </div>
+                                  {taskModalTab === "conversations" && (
+                                    <p className="text-sm text-[#9b9b9b] italic">No conversations yet</p>
+                                  )}
+                                  {taskModalTab === "history" && (
+                                    <p className="text-sm text-[#9b9b9b] italic">No history yet</p>
+                                  )}
+                                </div>
+
+                                {/* Add Comment */}
+                                <div>
+                                  <h3 className="text-sm font-semibold text-[#3d3d3d] mb-3">Add Comment</h3>
+                                  <div className="border border-[#e5e5e5] rounded-lg overflow-hidden">
+                                    <div className="flex items-center gap-2 px-3 py-2 border-b border-[#f0f0f0] bg-[#fafafa]">
+                                      <select className="text-xs text-[#6b675f] bg-transparent border-none outline-none pr-1">
+                                        <option>Change t…</option>
+                                      </select>
+                                      <div className="w-px h-4 bg-[#e5e5e5]" />
+                                      {["B","I","U","S"].map(f => (
+                                        <button key={f} className="text-xs font-bold text-[#6b675f] hover:text-[#3d3d3d] w-6 h-6 flex items-center justify-center rounded hover:bg-[#e5e5e5]">{f}</button>
+                                      ))}
+                                      <div className="w-px h-4 bg-[#e5e5e5]" />
+                                      <button className="text-xs text-[#6b675f] hover:text-[#3d3d3d] w-6 h-6 flex items-center justify-center rounded hover:bg-[#e5e5e5]">≡</button>
+                                      <button className="text-xs text-[#6b675f] hover:text-[#3d3d3d] w-6 h-6 flex items-center justify-center rounded hover:bg-[#e5e5e5]">⋮≡</button>
+                                    </div>
+                                    <textarea
+                                      value={taskComment}
+                                      onChange={e => setTaskComment(e.target.value)}
+                                      rows={3}
+                                      className="w-full px-3 py-3 text-sm text-[#3d3d3d] placeholder:text-[#c0c0c0] resize-none focus:outline-none"
+                                      placeholder=""
+                                    />
+                                  </div>
+                                </div>
+                              </>
                             )}
-
-                            {/* Attachments */}
-                            <div>
-                              <h3 className="text-sm font-semibold text-[#3d3d3d] mb-3">Attachments</h3>
-                              <div className="border-2 border-dashed border-[#e5e5e5] rounded-lg px-6 py-5 flex items-center justify-center gap-3 cursor-pointer hover:border-[#c0bcb6] transition-colors">
-                                <Upload className="w-5 h-5 text-[#9b9b9b]" />
-                                <span className="text-sm text-[#6b675f]">Drag and drop files here, or click to select</span>
-                              </div>
-                              <p className="text-xs text-[#9b9b9b] text-center mt-3">No attachments yet</p>
-                            </div>
-
-                            <div className="border-t border-[#f0f0f0]" />
-
-                            {/* Activity */}
-                            <div>
-                              <h3 className="text-sm font-semibold text-[#3d3d3d] mb-4">Activity</h3>
-                              <div className="flex gap-6 border-b border-[#e5e5e5] mb-5">
-                                <button
-                                  onClick={() => setTaskModalTab("conversations")}
-                                  className={`pb-2 text-sm font-medium border-b-2 transition-colors ${taskModalTab === "conversations" ? "border-[#1a1a2e] text-[#1a1a2e]" : "border-transparent text-[#9b9b9b] hover:text-[#3d3d3d]"}`}
-                                >
-                                  Conversations
-                                </button>
-                                <button
-                                  onClick={() => setTaskModalTab("history")}
-                                  className={`pb-2 text-sm font-medium border-b-2 transition-colors ${taskModalTab === "history" ? "border-[#1a1a2e] text-[#1a1a2e]" : "border-transparent text-[#9b9b9b] hover:text-[#3d3d3d]"}`}
-                                >
-                                  History
-                                </button>
-                              </div>
-                              {taskModalTab === "conversations" && (
-                                <p className="text-sm text-[#9b9b9b] italic">No conversations yet</p>
-                              )}
-                              {taskModalTab === "history" && (
-                                <p className="text-sm text-[#9b9b9b] italic">No history yet</p>
-                              )}
-                            </div>
-
-                            {/* Add Comment */}
-                            <div>
-                              <h3 className="text-sm font-semibold text-[#3d3d3d] mb-3">Add Comment</h3>
-                              <div className="border border-[#e5e5e5] rounded-lg overflow-hidden">
-                                <div className="flex items-center gap-2 px-3 py-2 border-b border-[#f0f0f0] bg-[#fafafa]">
-                                  <select className="text-xs text-[#6b675f] bg-transparent border-none outline-none pr-1">
-                                    <option>Change t…</option>
-                                  </select>
-                                  <div className="w-px h-4 bg-[#e5e5e5]" />
-                                  {["B","I","U","S"].map(f => (
-                                    <button key={f} className="text-xs font-bold text-[#6b675f] hover:text-[#3d3d3d] w-6 h-6 flex items-center justify-center rounded hover:bg-[#e5e5e5]">{f}</button>
-                                  ))}
-                                  <div className="w-px h-4 bg-[#e5e5e5]" />
-                                  <button className="text-xs text-[#6b675f] hover:text-[#3d3d3d] w-6 h-6 flex items-center justify-center rounded hover:bg-[#e5e5e5]">≡</button>
-                                  <button className="text-xs text-[#6b675f] hover:text-[#3d3d3d] w-6 h-6 flex items-center justify-center rounded hover:bg-[#e5e5e5]">⋮≡</button>
-                                </div>
-                                <textarea
-                                  value={taskComment}
-                                  onChange={e => setTaskComment(e.target.value)}
-                                  rows={3}
-                                  className="w-full px-3 py-3 text-sm text-[#3d3d3d] placeholder:text-[#c0c0c0] resize-none focus:outline-none"
-                                  placeholder=""
-                                />
-                              </div>
-                            </div>
                           </div>
 
                           {/* Right panel - Details */}
@@ -3174,17 +3399,47 @@ export default function EstateManagementPage() {
                         </div>
 
                         {/* Modal footer */}
-                        <div className="flex items-center justify-end gap-3 px-8 py-4 border-t border-[#f0f0f0]">
-                          <Button
-                            onClick={() => setTaskModalOpen(false)}
-                            className="bg-white border border-[#d0d0d0] text-[#3d3d3d] hover:bg-[#f8f7f5] h-9 px-5 text-sm"
-                          >
-                            Cancel
-                          </Button>
-                          <Button className="bg-[#1a1a2e] hover:bg-[#2d2d4e] text-white h-9 px-5 text-sm">
-                            Save
-                          </Button>
-                        </div>
+                        {task.slug === "confirm_asset_classification" ? (
+                          <>
+                            {classificationState === "approved" ? null : classificationState === "review" && classificationData ? (
+                              <div className="flex items-center justify-between px-8 py-4 border-t border-[#f0f0f0]">
+                                <div className="flex items-center gap-1.5 text-xs text-[#6b675f]">
+                                  <span>{classificationData.classification.assets.length} assets classified</span>
+                                  <span className="text-[#d0d0d0]">&middot;</span>
+                                  <span>{classificationData.classification.assets.filter(a => a.confidence < 0.70).length} low confidence</span>
+                                </div>
+                                <Button
+                                  onClick={handleApproveClassification}
+                                  disabled={Object.keys(bucketOverrides).some(idx => !overrideReasons[Number(idx)]?.trim())}
+                                  className="bg-[#1a1a2e] hover:bg-[#2d2d4e] text-white h-9 px-5 text-sm disabled:opacity-50 disabled:cursor-not-allowed"
+                                >
+                                  Approve classification &rarr;
+                                </Button>
+                              </div>
+                            ) : (
+                              <div className="flex items-center justify-end gap-3 px-8 py-4 border-t border-[#f0f0f0]">
+                                <Button
+                                  onClick={() => { setTaskModalOpen(false); resetClassificationState(); }}
+                                  className="bg-white border border-[#d0d0d0] text-[#3d3d3d] hover:bg-[#f8f7f5] h-9 px-5 text-sm"
+                                >
+                                  Cancel
+                                </Button>
+                              </div>
+                            )}
+                          </>
+                        ) : (
+                          <div className="flex items-center justify-end gap-3 px-8 py-4 border-t border-[#f0f0f0]">
+                            <Button
+                              onClick={() => { setTaskModalOpen(false); resetClassificationState(); }}
+                              className="bg-white border border-[#d0d0d0] text-[#3d3d3d] hover:bg-[#f8f7f5] h-9 px-5 text-sm"
+                            >
+                              Cancel
+                            </Button>
+                            <Button className="bg-[#1a1a2e] hover:bg-[#2d2d4e] text-white h-9 px-5 text-sm">
+                              Save
+                            </Button>
+                          </div>
+                        )}
                       </div>
                     </div>
                   )
