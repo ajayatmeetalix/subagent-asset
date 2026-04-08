@@ -125,12 +125,75 @@ const DEADLINE_CATEGORIES = [
   },
 ]
 
+const JOBS_BOARD_TASKS = [
+  {
+    id: "t1",
+    slug: "determine_the_path_of_legal_administration_applicable_to_the_decedent",
+    title: "Determine the Legal Administration Path",
+    assignee: "MitchStage OlivetoStage",
+    assigneeEmail: "mitch+stag...",
+    reviewer: "delaney.haley@meetalix.com",
+    createdAt: "Apr 7, 2026 5:49 PM",
+    updatedAt: "Apr 7, 2026 5:49 PM",
+    status: "todo",
+    priority: "",
+    jobVersion: 1,
+    jobId: "5e3f6a3a-d183-4d04-830b-f70be6ff0a6e",
+    steps: { done: 0, total: 7 },
+    description: "Determine the Legal Administration Path — KYC is complete — it's time to set the legal path for this estate. Review the uploaded documents, confirm the estate's key characteristics (gross value, asset types, jurisdiction, whether a trust or will exists), and select the correct administration path. Your selection here activates all the downstream work for this estate.",
+    stepItems: [
+      { id: 1, text: "Open Box and confirm all required documents are uploaded: death certificate, will (if applicable), asset list, and debt list." },
+      { id: 2, text: "Review the estate's gross value, asset types, and whether a valid will exists." },
+      { id: 3, text: "Identify the decedent's state of domicile and whether any out-of-state real property requires ancillary probate." },
+      { id: 4, text: "Cross-reference the estate's characteristics against the jurisdiction's administration thresholds (e.g., does it qualify for SEA?)." },
+      { id: 5, text: "Select the applicable legal path(s) — Probate, SEA, Trust, or Ancillary — in the Legal Path field in Estate Manager." },
+      { id: 6, text: "Add any relevant notes about your determination in the job notes field." },
+      { id: 7, text: "Create the 'Determine Legal Path' milestone in the Estate Timeline, then mark this job complete." },
+    ],
+  },
+  {
+    id: "t2",
+    slug: "confirm_asset_classification",
+    title: "Confirm Asset Classification",
+    assignee: "MitchStage OlivetoStage",
+    assigneeEmail: "mitch+stag...",
+    reviewer: "delaney.haley@meetalix.com",
+    createdAt: "Apr 7, 2026 5:52 PM",
+    updatedAt: "Apr 7, 2026 5:52 PM",
+    status: "todo",
+    priority: "",
+    jobVersion: 1,
+    jobId: "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+    steps: { done: 0, total: 7 },
+    description: "All assets for this estate have been discovered and their titling information confirmed. Review the asset list and verify that every asset has a transfer mechanism recorded — POD/TOD designation, joint tenancy, trust funding status, or none. Once confirmed, marking this job complete signals to the legal team that the estate is ready for legal path determination.",
+    stepItems: [
+      { id: 1, text: "Open the Assets tab in Estate Manager. Review every asset on the record." },
+      { id: 2, text: "Confirm each financial account has a POD/TOD status recorded. If any account is still marked Unknown, return the relevant Obtain POD/TOD job to In Progress before proceeding." },
+      { id: 3, text: "Confirm each real property asset has deed type and titling documented (joint tenancy, community property, sole ownership, trust-held, etc.). Pull the deed from Box if needed." },
+      { id: 4, text: "Confirm each vehicle has title status recorded. Verify DMV REG 5 eligibility if applicable." },
+      { id: 5, text: "Confirm any life insurance policies have beneficiary designation status recorded." },
+      { id: 6, text: "Confirm there are no assets in unknown transfer status remaining on the record." },
+      { id: 7, text: "Mark complete. This triggers DETERMINE the legal administration path." },
+    ],
+  },
+  { id: "c1", slug: "review_new_settlement_starting_point", title: "New Settlement Created - Please review", assignee: "Admin Test", assigneeEmail: "", reviewer: "", createdAt: "Apr 6, 2026 2:40 PM", updatedAt: "Apr 6, 2026 2:40 PM", status: "completed", priority: "", jobVersion: 1, jobId: "", steps: { done: 3, total: 3 }, description: "", stepItems: [] },
+  { id: "c2", slug: "notify_the_va_of_the_decedent", title: "Notify the VA of the Decedent's Passing", assignee: "Admin Test", assigneeEmail: "", reviewer: "", createdAt: "Apr 6, 2026 3:14 PM", updatedAt: "Apr 6, 2026 3:14 PM", status: "completed", priority: "", jobVersion: 1, jobId: "", steps: { done: 3, total: 3 }, description: "", stepItems: [] },
+  { id: "c3", slug: "define_plan_for_probate_lawyer", title: "Define plan for probate lawyer engagement", assignee: "Admin Test", assigneeEmail: "", reviewer: "", createdAt: "Apr 6, 2026 3:18 PM", updatedAt: "Apr 6, 2026 3:18 PM", status: "completed", priority: "", jobVersion: 1, jobId: "", steps: { done: 2, total: 2 }, description: "", stepItems: [] },
+]
+
 export default function EstateManagementPage() {
   const [activeNav, setActiveNav] = useState("home")
   const [displayTestEstates, setDisplayTestEstates] = useState(false)
   const [sidebarOpen, setSidebarOpen] = useState(false) // Start closed on mobile
   const [selectedEstate, setSelectedEstate] = useState<any>(null)
   const [activeTab, setActiveTab] = useState("assets")
+  const [jobsSearch, setJobsSearch] = useState("")
+  const [jobsPriority, setJobsPriority] = useState("all")
+  const [taskModalOpen, setTaskModalOpen] = useState(false)
+  const [taskModalId, setTaskModalId] = useState<string | null>(null)
+  const [taskStepChecked, setTaskStepChecked] = useState<Record<string, boolean>>({})
+  const [taskModalTab, setTaskModalTab] = useState<"conversations" | "history">("conversations")
+  const [taskComment, setTaskComment] = useState("")
   const [currentFolder, setCurrentFolder] = useState<string | null>(null)
   const [folders, setFolders] = useState<Record<string, Array<{ name: string; modified: string }>>>({
     root: [
@@ -2774,6 +2837,355 @@ export default function EstateManagementPage() {
                         })()}
                       </div>
 
+                    </div>
+                  )
+                })()}
+              </div>
+            ) : activeNav === "jobs-board" ? (
+              // Jobs Board View
+              <div className="flex-1 flex flex-col overflow-hidden">
+                {/* Jobs Board Header */}
+                <div className="bg-white border-b border-[#e5e5e5] px-6 py-4">
+                  <div className="flex items-center gap-2 mb-0.5">
+                    <span className="text-xs text-[#6b675f]">Estate ID:&nbsp;&nbsp;{selectedEstate.id}</span>
+                    <button className="text-[#6b675f] hover:text-[#3d3d3d]"><Copy className="w-3.5 h-3.5" /></button>
+                  </div>
+                  {selectedEstate.scanBoxId && (
+                    <div className="flex items-center gap-2 mb-3">
+                      <span className="text-xs text-[#6b675f]">Scan Box ID:&nbsp;&nbsp;{selectedEstate.scanBoxId}</span>
+                      <button className="text-[#6b675f] hover:text-[#3d3d3d]"><Copy className="w-3.5 h-3.5" /></button>
+                    </div>
+                  )}
+                  <h2 className="text-xl font-bold text-[#3d3d3d] mb-0.5">
+                    Estate of:&nbsp;&nbsp;{[estateData[selectedEstate.id]?.firstName, estateData[selectedEstate.id]?.middleName, estateData[selectedEstate.id]?.lastName, estateData[selectedEstate.id]?.suffix].filter(Boolean).join(" ") || selectedEstate.name}
+                  </h2>
+                  {selectedEstate.executors?.length > 0 && (
+                    <p className="text-sm text-[#6b675f]">Executor(s):&nbsp;&nbsp;{selectedEstate.executors.join(", ")}</p>
+                  )}
+                </div>
+
+                {/* Toolbar */}
+                <div className="bg-white border-b border-[#e5e5e5] px-6 py-3 flex items-center gap-3">
+                  <div className="relative">
+                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#9b9b9b]" />
+                    <input
+                      type="text"
+                      placeholder="Search"
+                      value={jobsSearch}
+                      onChange={e => setJobsSearch(e.target.value)}
+                      className="pl-9 pr-3 h-9 w-52 text-sm bg-[#f8f7f5] border border-[#e5e5e5] rounded-md text-[#3d3d3d] placeholder:text-[#9b9b9b] focus:outline-none focus:ring-2 focus:ring-[#3d3d3d]"
+                    />
+                  </div>
+                  <select
+                    value={jobsPriority}
+                    onChange={e => setJobsPriority(e.target.value)}
+                    className="h-9 px-3 text-sm border border-[#e5e5e5] rounded-md bg-[#f8f7f5] text-[#6b675f] focus:outline-none focus:ring-2 focus:ring-[#3d3d3d]"
+                  >
+                    <option value="all">Priority</option>
+                    <option value="high">High</option>
+                    <option value="medium">Medium</option>
+                    <option value="low">Low</option>
+                  </select>
+                  <Button className="ml-auto bg-[#7c6fc4] hover:bg-[#6b5eb3] text-white h-9 text-sm px-4">
+                    Create task
+                  </Button>
+                </div>
+
+                {/* Kanban Board */}
+                <div className="flex-1 overflow-auto p-5">
+                  {(() => {
+                    const filtered = JOBS_BOARD_TASKS.filter(t =>
+                      !jobsSearch || t.title.toLowerCase().includes(jobsSearch.toLowerCase()) || t.slug.toLowerCase().includes(jobsSearch.toLowerCase())
+                    )
+                    const todoTasks = filtered.filter(t => t.status === "todo")
+                    const inProgressTasks = filtered.filter(t => t.status === "in-progress")
+                    const awaitingTasks = filtered.filter(t => t.status === "awaiting-review")
+                    const completedTasks = filtered.filter(t => t.status === "completed")
+
+                    const TaskCard = ({ task }: { task: typeof JOBS_BOARD_TASKS[0] }) => (
+                      <div
+                        className="bg-white rounded-lg border border-[#e5e5e5] p-4 hover:border-[#c0bcb6] hover:shadow-sm transition-all cursor-pointer"
+                        onClick={() => { setTaskModalId(task.id); setTaskModalOpen(true); }}
+                      >
+                        <p className="text-[10px] text-[#9b9b9b] font-mono mb-1.5 leading-tight truncate">{task.slug}</p>
+                        <p className="text-sm font-semibold text-[#3d3d3d] mb-3 leading-snug">{task.title}</p>
+                        {task.steps && (
+                          <div className="mb-3">
+                            <div className="flex items-center justify-between mb-1">
+                              <span className="text-[11px] text-[#6b675f]">{task.steps.done} / {task.steps.total} steps completed</span>
+                            </div>
+                            <div className="h-1.5 bg-[#f0f0f0] rounded-full overflow-hidden">
+                              <div
+                                className="h-full rounded-full"
+                                style={{
+                                  width: task.steps.total > 0 ? `${(task.steps.done / task.steps.total) * 100}%` : "0%",
+                                  backgroundColor: task.steps.done === task.steps.total && task.steps.total > 0 ? "#22c55e" : "#7c6fc4"
+                                }}
+                              />
+                            </div>
+                          </div>
+                        )}
+                        <div className="flex items-center gap-1.5 mb-1.5">
+                          <User className="w-3.5 h-3.5 text-[#9b9b9b]" />
+                          <span className="text-[11px] text-[#6b675f]">{task.assignee}</span>
+                        </div>
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-1.5">
+                            <Clock className="w-3.5 h-3.5 text-[#9b9b9b]" />
+                            <span className="text-[11px] text-[#6b675f]">{task.createdAt}</span>
+                          </div>
+                          <button
+                            className="text-[11px] text-[#7c6fc4] hover:text-[#5a4fa0] flex items-center gap-0.5 font-medium"
+                            onClick={e => { e.stopPropagation(); setTaskModalId(task.id); setTaskModalOpen(true); }}
+                          >
+                            View estate <ChevronRight className="w-3 h-3" />
+                          </button>
+                        </div>
+                      </div>
+                    )
+
+                    const Column = ({ title, tasks, badgeColor }: { title: string; tasks: typeof JOBS_BOARD_TASKS; badgeColor: string }) => (
+                      <div className="flex flex-col w-72 flex-shrink-0">
+                        <div className="flex items-center gap-2 mb-3 px-0.5">
+                          <span className="text-sm font-semibold text-[#3d3d3d]">{title}</span>
+                          <span className={`text-xs rounded px-1.5 py-0.5 font-semibold ${badgeColor}`}>{tasks.length}</span>
+                        </div>
+                        <div className="flex flex-col gap-3 flex-1">
+                          {tasks.map(task => <TaskCard key={task.id} task={task} />)}
+                          {tasks.length === 0 && (
+                            <div className="border-2 border-dashed border-[#e5e5e5] rounded-lg h-20 flex items-center justify-center">
+                              <span className="text-xs text-[#c0c0c0]">No tasks</span>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    )
+
+                    return (
+                      <div className="flex gap-4 items-start min-w-max pb-4">
+                        <Column title="To Do" tasks={todoTasks} badgeColor="bg-[#3d3d3d] text-white" />
+                        <Column title="In Progress" tasks={inProgressTasks} badgeColor="bg-blue-50 text-blue-600 border border-blue-200" />
+                        <Column title="Awaiting Review" tasks={awaitingTasks} badgeColor="bg-amber-50 text-amber-600 border border-amber-200" />
+                        <Column title="Completed" tasks={completedTasks} badgeColor="bg-[#3d3d3d] text-white" />
+                      </div>
+                    )
+                  })()}
+                </div>
+
+                {/* Task Detail Modal */}
+                {taskModalOpen && (() => {
+                  const task = JOBS_BOARD_TASKS.find(t => t.id === taskModalId)
+                  if (!task) return null
+                  return (
+                    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4" onClick={() => setTaskModalOpen(false)}>
+                      <div
+                        className="bg-white rounded-xl shadow-2xl w-full max-w-5xl max-h-[90vh] flex flex-col overflow-hidden"
+                        onClick={e => e.stopPropagation()}
+                      >
+                        {/* Modal top bar */}
+                        <div className="flex items-start justify-between px-8 pt-6 pb-4 border-b border-[#f0f0f0]">
+                          <div>
+                            <p className="text-[11px] text-[#9b9b9b] font-mono mb-1">{task.slug}</p>
+                            <h2 className="text-xl font-bold text-[#1a1a2e]">{task.title}</h2>
+                          </div>
+                          <button onClick={() => setTaskModalOpen(false)} className="text-[#9b9b9b] hover:text-[#3d3d3d] ml-4 mt-1">
+                            <X className="w-5 h-5" />
+                          </button>
+                        </div>
+
+                        {/* Modal body */}
+                        <div className="flex flex-1 overflow-hidden">
+                          {/* Left panel */}
+                          <div className="flex-1 overflow-auto px-8 py-6 space-y-8">
+
+                            {/* Description */}
+                            {task.description && (
+                              <div>
+                                <h3 className="text-sm font-semibold text-[#3d3d3d] mb-3">Description</h3>
+                                <p className="text-sm text-[#4a4a4a] leading-relaxed">{task.description}</p>
+                              </div>
+                            )}
+
+                            {/* Steps */}
+                            {task.stepItems && task.stepItems.length > 0 && (
+                              <div>
+                                <h3 className="text-sm font-semibold text-[#3d3d3d] mb-4">Steps</h3>
+                                <div className="space-y-3">
+                                  {task.stepItems.map(step => (
+                                    <div key={step.id} className="flex items-start gap-3">
+                                      <input
+                                        type="checkbox"
+                                        checked={!!taskStepChecked[`${task.id}-${step.id}`]}
+                                        onChange={e => setTaskStepChecked(prev => ({ ...prev, [`${task.id}-${step.id}`]: e.target.checked }))}
+                                        className="mt-0.5 flex-shrink-0 w-4 h-4 rounded border-[#d0d0d0] accent-[#1a1a2e] cursor-pointer"
+                                      />
+                                      <div className="flex items-start gap-3 flex-1 bg-[#fafafa] border border-[#f0f0f0] rounded-lg px-4 py-3">
+                                        <span className="flex-shrink-0 w-7 h-7 bg-[#1a1a2e] text-white rounded-full flex items-center justify-center text-xs font-bold">{step.id}</span>
+                                        <p className="text-sm text-[#3d3d3d] leading-relaxed">{step.text}</p>
+                                      </div>
+                                    </div>
+                                  ))}
+                                </div>
+                              </div>
+                            )}
+
+                            {/* Attachments */}
+                            <div>
+                              <h3 className="text-sm font-semibold text-[#3d3d3d] mb-3">Attachments</h3>
+                              <div className="border-2 border-dashed border-[#e5e5e5] rounded-lg px-6 py-5 flex items-center justify-center gap-3 cursor-pointer hover:border-[#c0bcb6] transition-colors">
+                                <Upload className="w-5 h-5 text-[#9b9b9b]" />
+                                <span className="text-sm text-[#6b675f]">Drag and drop files here, or click to select</span>
+                              </div>
+                              <p className="text-xs text-[#9b9b9b] text-center mt-3">No attachments yet</p>
+                            </div>
+
+                            <div className="border-t border-[#f0f0f0]" />
+
+                            {/* Activity */}
+                            <div>
+                              <h3 className="text-sm font-semibold text-[#3d3d3d] mb-4">Activity</h3>
+                              <div className="flex gap-6 border-b border-[#e5e5e5] mb-5">
+                                <button
+                                  onClick={() => setTaskModalTab("conversations")}
+                                  className={`pb-2 text-sm font-medium border-b-2 transition-colors ${taskModalTab === "conversations" ? "border-[#1a1a2e] text-[#1a1a2e]" : "border-transparent text-[#9b9b9b] hover:text-[#3d3d3d]"}`}
+                                >
+                                  Conversations
+                                </button>
+                                <button
+                                  onClick={() => setTaskModalTab("history")}
+                                  className={`pb-2 text-sm font-medium border-b-2 transition-colors ${taskModalTab === "history" ? "border-[#1a1a2e] text-[#1a1a2e]" : "border-transparent text-[#9b9b9b] hover:text-[#3d3d3d]"}`}
+                                >
+                                  History
+                                </button>
+                              </div>
+                              {taskModalTab === "conversations" && (
+                                <p className="text-sm text-[#9b9b9b] italic">No conversations yet</p>
+                              )}
+                              {taskModalTab === "history" && (
+                                <p className="text-sm text-[#9b9b9b] italic">No history yet</p>
+                              )}
+                            </div>
+
+                            {/* Add Comment */}
+                            <div>
+                              <h3 className="text-sm font-semibold text-[#3d3d3d] mb-3">Add Comment</h3>
+                              <div className="border border-[#e5e5e5] rounded-lg overflow-hidden">
+                                <div className="flex items-center gap-2 px-3 py-2 border-b border-[#f0f0f0] bg-[#fafafa]">
+                                  <select className="text-xs text-[#6b675f] bg-transparent border-none outline-none pr-1">
+                                    <option>Change t…</option>
+                                  </select>
+                                  <div className="w-px h-4 bg-[#e5e5e5]" />
+                                  {["B","I","U","S"].map(f => (
+                                    <button key={f} className="text-xs font-bold text-[#6b675f] hover:text-[#3d3d3d] w-6 h-6 flex items-center justify-center rounded hover:bg-[#e5e5e5]">{f}</button>
+                                  ))}
+                                  <div className="w-px h-4 bg-[#e5e5e5]" />
+                                  <button className="text-xs text-[#6b675f] hover:text-[#3d3d3d] w-6 h-6 flex items-center justify-center rounded hover:bg-[#e5e5e5]">≡</button>
+                                  <button className="text-xs text-[#6b675f] hover:text-[#3d3d3d] w-6 h-6 flex items-center justify-center rounded hover:bg-[#e5e5e5]">⋮≡</button>
+                                </div>
+                                <textarea
+                                  value={taskComment}
+                                  onChange={e => setTaskComment(e.target.value)}
+                                  rows={3}
+                                  className="w-full px-3 py-3 text-sm text-[#3d3d3d] placeholder:text-[#c0c0c0] resize-none focus:outline-none"
+                                  placeholder=""
+                                />
+                              </div>
+                            </div>
+                          </div>
+
+                          {/* Right panel - Details */}
+                          <div className="w-64 border-l border-[#f0f0f0] px-6 py-6 flex-shrink-0 overflow-auto">
+                            <h3 className="text-sm font-semibold text-[#3d3d3d] mb-5">Details</h3>
+                            <div className="space-y-4">
+                              <div>
+                                <label className="block text-[10px] font-semibold text-[#9b9b9b] uppercase tracking-wider mb-1.5">Status</label>
+                                <div className="relative">
+                                  <select className="w-full h-9 pl-3 pr-8 text-sm border border-[#e5e5e5] rounded-md bg-white text-[#6b675f] focus:outline-none appearance-none">
+                                    <option value="todo">To Do</option>
+                                    <option value="in-progress">In Progress</option>
+                                    <option value="awaiting-review">Awaiting Review</option>
+                                    <option value="completed">Completed</option>
+                                  </select>
+                                  <span className="absolute right-2 top-1/2 -translate-y-1/2 text-[#9b9b9b] pointer-events-none text-xs">▾</span>
+                                </div>
+                                <span className="inline-flex mt-1.5 items-center px-2 py-0.5 rounded text-xs font-medium bg-[#f5f0e8] text-[#8a6d3b] border border-[#e8d9b8]">To Do</span>
+                              </div>
+                              <div>
+                                <label className="block text-[10px] font-semibold text-[#9b9b9b] uppercase tracking-wider mb-1.5">Priority</label>
+                                <div className="relative">
+                                  <select className="w-full h-9 pl-3 pr-8 text-sm border border-[#e5e5e5] rounded-md bg-white text-[#6b675f] focus:outline-none appearance-none">
+                                    <option value="">Priority</option>
+                                    <option value="high">High</option>
+                                    <option value="medium">Medium</option>
+                                    <option value="low">Low</option>
+                                  </select>
+                                  <span className="absolute right-2 top-1/2 -translate-y-1/2 text-[#9b9b9b] pointer-events-none text-xs">▾</span>
+                                </div>
+                              </div>
+                              <div>
+                                <label className="block text-[10px] font-semibold text-[#9b9b9b] uppercase tracking-wider mb-1.5">Assignee</label>
+                                <div className="relative">
+                                  <select className="w-full h-9 pl-3 pr-8 text-sm border border-[#e5e5e5] rounded-md bg-white text-[#3d3d3d] focus:outline-none appearance-none">
+                                    <option>{task.assignee}{task.assigneeEmail ? ` (${task.assigneeEmail})` : ""}</option>
+                                  </select>
+                                  <span className="absolute right-2 top-1/2 -translate-y-1/2 text-[#9b9b9b] pointer-events-none text-xs">▾</span>
+                                </div>
+                              </div>
+                              {task.reviewer && (
+                                <div className="flex items-start gap-2 pt-1">
+                                  <UserCircle className="w-4 h-4 text-[#9b9b9b] flex-shrink-0 mt-0.5" />
+                                  <div>
+                                    <span className="text-[11px] text-[#9b9b9b] font-semibold">Reviewer:&nbsp;</span>
+                                    <span className="text-[11px] text-[#3d3d3d]">{task.reviewer}</span>
+                                  </div>
+                                </div>
+                              )}
+                              <div className="flex items-start gap-2">
+                                <CalendarDays className="w-4 h-4 text-[#9b9b9b] flex-shrink-0 mt-0.5" />
+                                <div>
+                                  <span className="text-[11px] text-[#9b9b9b] font-semibold">Created:&nbsp;</span>
+                                  <span className="text-[11px] text-[#3d3d3d]">{task.createdAt}</span>
+                                </div>
+                              </div>
+                              <div className="flex items-start gap-2">
+                                <CalendarDays className="w-4 h-4 text-[#9b9b9b] flex-shrink-0 mt-0.5" />
+                                <div>
+                                  <span className="text-[11px] text-[#9b9b9b] font-semibold">Updated:&nbsp;</span>
+                                  <span className="text-[11px] text-[#3d3d3d]">{task.updatedAt}</span>
+                                </div>
+                              </div>
+                              {task.jobVersion && (
+                                <div>
+                                  <span className="text-[11px] text-[#9b9b9b] font-semibold">Job Version:&nbsp;</span>
+                                  <span className="text-[11px] text-[#3d3d3d]">{task.jobVersion}</span>
+                                </div>
+                              )}
+                              {task.jobId && (
+                                <div>
+                                  <span className="text-[11px] text-[#9b9b9b] font-semibold">Job ID:&nbsp;</span>
+                                  <span className="text-[11px] text-[#7c6fc4] font-mono break-all">{task.jobId}</span>
+                                </div>
+                              )}
+                              <div className="pt-2">
+                                <button className="text-sm text-[#7c6fc4] hover:text-[#5a4fa0] font-medium">Send Feedback</button>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+
+                        {/* Modal footer */}
+                        <div className="flex items-center justify-end gap-3 px-8 py-4 border-t border-[#f0f0f0]">
+                          <Button
+                            onClick={() => setTaskModalOpen(false)}
+                            className="bg-white border border-[#d0d0d0] text-[#3d3d3d] hover:bg-[#f8f7f5] h-9 px-5 text-sm"
+                          >
+                            Cancel
+                          </Button>
+                          <Button className="bg-[#1a1a2e] hover:bg-[#2d2d4e] text-white h-9 px-5 text-sm">
+                            Save
+                          </Button>
+                        </div>
+                      </div>
                     </div>
                   )
                 })()}
